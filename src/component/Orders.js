@@ -1,68 +1,320 @@
-// Orders.js
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
 const Orders = ({ orders, setOrders }) => {
-  const [customer, setCustomer] = useState("");
-  const [service, setService] = useState("Washing");
-  const [price, setPrice] = useState("");
+  const [customer, setCustomer] = useState('');
+  const [service, setService] = useState('Washing');
+  const [price, setPrice] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState('Pending');
 
-  const addOrder = () => {
-    if (customer && price) {
-      setOrders([...orders, { id: Date.now(), customer, service, price: Number(price) }]);
-      setCustomer("");
-      setPrice("");
-    }
+  // 🔹 Edit state
+  const [editingOrder, setEditingOrder] = useState(null);
+
+  // 🔹 Filter states
+  const today = new Date().toISOString().split('T')[0];
+  const [filterType, setFilterType] = useState('today'); // default = current month
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
+
+  // ✅ Add order
+  const handleAddOrder = (e) => {
+    e.preventDefault();
+
+    const newOrder = {
+      id: Date.now(),
+      customer,
+      price: Number(price),
+      service,
+      paymentStatus,
+      date: new Date().toISOString(), // store order date
+    };
+
+    setOrders([newOrder, ...orders]);
+
+    setCustomer('');
+    setPrice('');
+    setPaymentStatus('Pending');
   };
 
-  const cardStyle = { backgroundColor: "#ECF0F1", color: "#2C3E50", borderRadius: "5px" };
+  // ✅ Save edited order
+  const handleSaveEdit = () => {
+    const updatedOrders = orders.map((order) =>
+      order.id === editingOrder.id ? editingOrder : order
+    );
+    setOrders(updatedOrders);
+    setEditingOrder(null);
+  };
+
+  // ✅ Delete order
+  const deleteOrder = (id) => {
+    setOrders(orders.filter((order) => order.id !== id));
+  };
+
+  // ✅ Filtering Logic
+  const filteredOrders = orders.filter((order) => {
+    const orderDate = new Date(order.date);
+
+    if (filterType === 'today') {
+      return orderDate.toDateString() === new Date().toDateString();
+    }
+
+    if (filterType === 'monthly') {
+      return (
+        orderDate.getMonth() === new Date().getMonth() &&
+        orderDate.getFullYear() === new Date().getFullYear()
+      );
+    }
+
+    if (filterType === 'yearly') {
+      return orderDate.getFullYear() === new Date().getFullYear();
+    }
+
+    if (filterType === 'custom') {
+      if (!startDate || !endDate) return true;
+
+      // Convert to YYYY-MM-DD only (remove time issues)
+      const orderDateOnly = new Date(order.date).toISOString().split('T')[0];
+      return orderDateOnly >= startDate && orderDateOnly <= endDate;
+    }
+
+    return true;
+  });
 
   return (
     <div>
-      <h2 style={{ color: "#2C3E50" }}>Orders</h2>
-      <div className="card p-3 mb-4" style={cardStyle}>
-        <h5>Add New Order</h5>
-        <input
-          className="form-control mb-2"
-          placeholder="Customer Name"
-          value={customer}
-          onChange={(e) => setCustomer(e.target.value)}
-        />
-        <select className="form-select mb-2" value={service} onChange={(e) => setService(e.target.value)}>
-          <option>Washing</option>
-          <option>Ironing</option>
-          <option>Dry Cleaning</option>
-        </select>
-        <input
-          type="number"
-          className="form-control mb-2"
-          placeholder="Price"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-        />
-        <button className="btn btn-primary">Add Order</button>
+      <h2 style={{ color: '#2C3E50' }}>Orders</h2>
+
+      {/* 🔹 Filter Section */}
+      <div className="card p-3 mb-4 shadow-sm">
+        <div className="row g-3 align-items-end">
+          <div className="col-md-3">
+            <label className="form-label">Filter By</label>
+            <select
+              className="form-select"
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+            >
+              <option value="today">Today</option>
+              <option value="monthly">This Month</option>
+              <option value="yearly">This Year</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+
+          {filterType === 'custom' && (
+            <>
+              <div className="col-md-3">
+                <label className="form-label">Start Date</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="col-md-3">
+                <label className="form-label">End Date</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
+      {/* 🔹 Add Order Form */}
+      <form onSubmit={handleAddOrder} className="row g-3 mb-4">
+        <div className="col-md-3">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Customer Name"
+            value={customer}
+            onChange={(e) => setCustomer(e.target.value)}
+            required
+          />
+        </div>
+        <div className="col-md-3">
+          <select
+            className="form-select"
+            value={service}
+            onChange={(e) => setService(e.target.value)}
+          >
+            <option value="Washing">Washing</option>
+            <option value="Ironing">Ironing</option>
+            <option value="Dry Cleaning">Dry Cleaning</option>
+          </select>
+        </div>
+        <div className="col-md-2">
+          <input
+            type="number"
+            className="form-control"
+            placeholder="Price"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            required
+          />
+        </div>
+        <div className="col-md-2">
+          <select
+            className="form-select"
+            value={paymentStatus}
+            onChange={(e) => setPaymentStatus(e.target.value)}
+          >
+            <option value="Paid">Paid</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+        <div className="col-md-2">
+          <button type="submit" className="btn btn-primary w-100">
+            Add Order
+          </button>
+        </div>
+      </form>
+
+      {/* 🔹 Orders Table */}
       <h5>Orders List</h5>
-      <table className="table table-bordered" style={{ backgroundColor: "#fff" }}>
-        <thead style={{ backgroundColor: "#3498DB", color: "#fff" }}>
+      <table className="table table-bordered table-striped table-hover shadow-sm text-center">
+        <thead>
           <tr>
-            <th>ID</th>
-            <th>Customer</th>
-            <th>Service</th>
-            <th>Price</th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>ID</th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+              Customer
+            </th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+              Service
+            </th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+              Price
+            </th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+              Status
+            </th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody>
-          {orders.map((order) => (
-            <tr key={order.id}>
+          {filteredOrders.map((order) => (
+            <tr
+              key={order.id}
+              style={{
+                backgroundColor:
+                  order.paymentStatus === 'Paid' ? '#E8F8F5' : '#FEF9E7',
+              }}
+            >
               <td>{order.id}</td>
               <td>{order.customer}</td>
               <td>{order.service}</td>
               <td>₦{order.price}</td>
+              <td>
+                {order.paymentStatus === 'Paid' ? (
+                  <span className="badge bg-success">
+                    <i className="bi bi-check-circle me-1"></i> Paid
+                  </span>
+                ) : (
+                  <span className="badge bg-warning text-dark">
+                    <i className="bi bi-hourglass-split me-1"></i> Pending
+                  </span>
+                )}
+              </td>
+              <td>
+                <button
+                  className="btn btn-sm btn-info me-2"
+                  onClick={() => setEditingOrder(order)}
+                >
+                  <i className="bi bi-pencil-square"></i> Edit
+                </button>
+                <button
+                  className="btn btn-sm btn-danger"
+                  onClick={() => deleteOrder(order.id)}
+                >
+                  <i className="bi bi-trash"></i> Delete
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {/* 🔹 Edit Modal */}
+      {editingOrder && (
+        <div className="modal show fade d-block" tabIndex="-1" role="dialog">
+          <div className="modal-dialog" role="document">
+            <div className="modal-content shadow-lg">
+              <div className="modal-header">
+                <h5 className="modal-title">Edit Order</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setEditingOrder(null)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label className="form-label">Customer</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={editingOrder.customer}
+                    disabled
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Price</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={editingOrder.price}
+                    onChange={(e) =>
+                      setEditingOrder({
+                        ...editingOrder,
+                        price: Number(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Payment Status</label>
+                  <select
+                    className="form-select"
+                    value={editingOrder.paymentStatus}
+                    onChange={(e) =>
+                      setEditingOrder({
+                        ...editingOrder,
+                        paymentStatus: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="Paid">Paid</option>
+                    <option value="Pending">Pending</option>
+                  </select>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setEditingOrder(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={handleSaveEdit}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
