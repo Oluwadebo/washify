@@ -29,6 +29,8 @@ const Reports = ({ orders, expenses }) => {
   const pieRef = useRef(null);
   const barRef = useRef(null);
   const today = new Date().toISOString().split('T')[0];
+  const currentMonth = today.toLocaleDateString('default',{month:'long'});
+  const currentYear = today.getFullYear();
   const [filterType, setFilterType] = useState('monthly');
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
@@ -81,12 +83,32 @@ const Reports = ({ orders, expenses }) => {
     ],
   };
 
-  const ordersData = {
-    labels: filteredOrders.map((o) => new Date(o.date).toLocaleDateString()),
+  const allDates = Array.from(
+    new Set([
+      ...filteredOrders.map((o) => new Date(o.date).toLocaleDateString()),
+      ...filteredExpenses.map((e) => new Date(e.date).toLocaleDateString()),
+    ])
+  ).sort((a, b) => new Date(a) - new Date(b));
+
+  const mergedBarData = {
+    labels: allDates,
     datasets: [
       {
-        label: 'Orders Value',
-        data: filteredOrders.map((o) => o.price),
+        label: 'Expenses',
+        data: allDates.map((date) =>
+          filteredExpenses
+            .filter((e) => new Date(e.date).toLocaleDateString() === date)
+            .reduce((sum, e) => sum + e.amount, 0)
+        ),
+        backgroundColor: '#e74c3c',
+      },
+      {
+        label: 'Orders (Income)',
+        data: allDates.map((date) =>
+          filteredOrders
+            .filter((o) => new Date(o.date).toLocaleDateString() === date)
+            .reduce((sum, o) => sum + o.price, 0)
+        ),
         backgroundColor: '#3498db',
       },
     ],
@@ -160,24 +182,28 @@ const Reports = ({ orders, expenses }) => {
   const exportToPDF = async () => {
     setLoading(true);
     const doc = new jsPDF();
-    doc.setFontSize(50);
+
+    // Watermark
+    doc.setFontSize(80);
     doc.setTextColor(230, 230, 230);
-    doc.text('My Laundry Shop', 105, 150, { angle: 45, align: 'center' });
+    doc.text('My Laundry Shop', 105, 150, { angle: 0, align: 'center' });
     doc.setTextColor(0, 0, 0);
 
+    // Logo
     const img = new Image();
     img.src = '/images/brand.png';
     await new Promise((resolve) => (img.onload = resolve));
-    doc.addImage(img, 'PNG', 20, 15, 30, 15);
+    doc.addImage(img, 'PNG', 14, 15, 30, 15);
 
+    // Header
     doc.setFontSize(18).setFont('helvetica', 'bold');
-    doc.text('My Laundry Shop', 60, 20);
+    doc.text('My Laundry Shop', 60, 25);
     doc.setFontSize(10).setFont('helvetica', 'normal');
-    doc.text('40, Jomowoye Street, Irele, Ondo State', 190, 22, {
+    doc.text('40, Jomowoye Street, Irele, Ondo State', 196, 21, {
       align: 'right',
     });
-    doc.text('Tel: 09044796430', 190, 28, { align: 'right' });
-    doc.line(20, 32, 190, 32);
+    doc.text('Tel: 09044796430', 196, 27, { align: 'right' });
+    doc.line(14, 32, 196, 32);
 
     doc.setFontSize(13).setFont('helvetica', 'bold');
     doc.text('BUSINESS REPORT', 105, 40, { align: 'center' });
@@ -191,8 +217,9 @@ const Reports = ({ orders, expenses }) => {
       align: 'center',
     });
 
+    // Metrics Table
     autoTable(doc, {
-      startY: 65,
+      startY: 60,
       theme: 'grid',
       head: [['Metric', 'Amount']],
       body: [
@@ -206,16 +233,24 @@ const Reports = ({ orders, expenses }) => {
 
     let currentY = doc.lastAutoTable.finalY + 10;
 
+    // Charts
     const pieImg = pieRef.current?.toBase64Image();
     const barImg = barRef.current?.toBase64Image();
-    if (pieImg) doc.addImage(pieImg, 'PNG', 30, currentY, 70, 70);
-    if (barImg) doc.addImage(barImg, 'PNG', 120, currentY, 70, 70);
-    currentY += 80;
+
+    if (pieImg) {
+      doc.addImage(pieImg, 'PNG', 35, currentY, 70, 70); // Pie chart on left
+    }
+
+    if (barImg) {
+      doc.addImage(barImg, 'PNG', 110, currentY, 70, 70); // Merged bar chart on right
+    }
+
+    currentY += 80; // move below charts
 
     // Orders Table
     autoTable(doc, {
       startY: currentY,
-      head: [['ID', 'Customer', 'Service', 'Price', 'Date']],
+      head: ["Income ",['ID', 'Customer', 'Service', 'Price', 'Date']],
       body: filteredOrders.length
         ? filteredOrders.map((o) => [
             o.id,
@@ -228,12 +263,13 @@ const Reports = ({ orders, expenses }) => {
       theme: 'grid',
       headStyles: { fillColor: [52, 73, 94], textColor: [255, 255, 255] },
       styles: { fontSize: 9 },
-      margin: { top: 10 },
     });
+
+    currentY = doc.lastAutoTable.finalY + 10;
 
     // Expenses Table
     autoTable(doc, {
-      startY: doc.lastAutoTable.finalY + 10,
+      startY: currentY,
       head: [['ID', 'Category', 'Amount', 'Date']],
       body: filteredExpenses.length
         ? filteredExpenses.map((e) => [
@@ -246,15 +282,14 @@ const Reports = ({ orders, expenses }) => {
       theme: 'grid',
       headStyles: { fillColor: [52, 73, 94], textColor: [255, 255, 255] },
       styles: { fontSize: 9 },
-      margin: { top: 10 },
     });
 
     // Signature
     const signatureY = doc.lastAutoTable.finalY + 20;
     doc.line(20, signatureY, 80, signatureY);
-    doc.text('Prepared By: ANTHONY', 25, signatureY + 5);
+    doc.text('Prepared By: ANTHONY', 30, signatureY + 5);
     doc.line(130, signatureY, 190, signatureY);
-    doc.text('Approved By: DEBO', 185, signatureY + 5, { align: 'right' });
+    doc.text('Approved By: DEBO', 178, signatureY + 5, { align: 'right' });
 
     // Page numbers
     const pageCount = doc.internal.getNumberOfPages();
@@ -284,7 +319,7 @@ const Reports = ({ orders, expenses }) => {
               onChange={(e) => setFilterType(e.target.value)}
             >
               <option value="today">Today</option>
-              <option value="monthly">This Month</option>
+              <option value="monthly">{'This Month (${888})'}</option>
               <option value="yearly">This Year</option>
               <option value="custom">Custom Range</option>
             </select>
@@ -314,24 +349,45 @@ const Reports = ({ orders, expenses }) => {
           )}
 
           {/* Export Buttons */}
-          <div className="col-md-3 d-flex gap-2">
-            <button
-              className="btn btn-success w-50"
-              onClick={exportToExcel}
-              disabled={loading}
-              aria-label="Export report to Excel"
-            >
-              {loading ? 'Exporting...' : 'Excel'}
-            </button>
-            <button
-              className="btn btn-danger w-50"
-              onClick={exportToPDF}
-              disabled={loading}
-              aria-label="Export report to PDF"
-            >
-              {loading ? 'Exporting...' : 'PDF'}
-            </button>
-          </div>
+          <button
+            className="btn btn-success w-25 d-flex align-items-center justify-content-center mx-1"
+            onClick={exportToExcel}
+            disabled={loading}
+            aria-label="Export report to Excel"
+          >
+            {loading ? (
+              <>
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+                Exporting...
+              </>
+            ) : (
+              'Excel'
+            )}
+          </button>
+
+          <button
+            className="btn btn-danger w-25 d-flex align-items-center justify-content-center mx-1"
+            onClick={exportToPDF}
+            disabled={loading}
+            aria-label="Export report to PDF"
+          >
+            {loading ? (
+              <>
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+                Exporting...
+              </>
+            ) : (
+              'PDF'
+            )}
+          </button>
         </div>
       </div>
 
@@ -369,17 +425,43 @@ const Reports = ({ orders, expenses }) => {
         </div>
       </div>
 
+      {/* Charts */}
+      <div className="row mt-4">
+        <div className="col-md-6">
+          <h6>Income vs Expenses</h6>
+          <Pie ref={pieRef} data={incomeExpenseData} />
+        </div>
+        <div className="col-md-6">
+          <h6>Orders vs Expenses Overview</h6>
+          <Bar
+            ref={barRef}
+            data={mergedBarData}
+            options={{ responsive: true }}
+          />
+        </div>
+      </div>
+
       {/* Orders Table */}
       <h5>Orders</h5>
       <div className="table-responsive">
         <table className="table table-bordered table-striped text-center">
           <thead style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
             <tr>
-              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>ID</th>
-              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Customer</th>
-              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Service</th>
-              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Price</th>
-              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Date</th>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                ID
+              </th>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                Customer
+              </th>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                Service
+              </th>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                Price
+              </th>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                Date
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -410,10 +492,18 @@ const Reports = ({ orders, expenses }) => {
         <table className="table table-bordered table-striped text-center">
           <thead style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
             <tr>
-              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>ID</th>
-              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Category</th>
-              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Amount</th>
-              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Date</th>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                ID
+              </th>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                Category
+              </th>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                Amount
+              </th>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                Date
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -435,22 +525,6 @@ const Reports = ({ orders, expenses }) => {
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* Charts */}
-      <div className="row mt-4">
-        <div className="col-md-6">
-          <h6>Income vs Expenses</h6>
-          <Pie
-            ref={pieRef}
-            id="income-expense-chart"
-            data={incomeExpenseData}
-          />
-        </div>
-        <div className="col-md-6">
-          <h6>Orders Overview</h6>
-          <Bar ref={barRef} id="orders-chart" data={ordersData} />
-        </div>
       </div>
     </div>
   );
