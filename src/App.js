@@ -1,3 +1,4 @@
+import './App.css';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Dashboard from './component/Dashboard';
@@ -48,6 +49,7 @@ function App() {
             onClick={toggleSidebar}
             aria-label="Toggle sidebar"
           >
+            
             <i className="bi bi-list fs-4"></i>
           </button>
           <span className="navbar-brand mb-0 h5 text-light">

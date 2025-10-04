@@ -34,7 +34,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         </h5>
       </div>
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      {/* <div className="d-flex justify-content-between align-items-center mb-4">
         <h4 style={{ color: '#1ABC9C', fontWeight: 'bold' }}>Admin Panel</h4>
         <button
           className="btn btn-sm btn-outline-light d-md-none"
@@ -43,7 +43,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         >
           ✕
         </button>
-      </div>
+      </div> */}
 
       {/* Navigation Links */}
       <ul className="nav flex-column">
@@ -52,20 +52,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             <NavLink
               to={link.path}
               onClick={() => window.innerWidth < 768 && toggleSidebar()}
-              style={({ isActive }) => ({
-                backgroundColor: isActive ? '#3498DB' : '#34495E',
-                color: '#fff',
-                borderRadius: '5px',
-                padding: '10px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                borderLeft: isActive
-                  ? '4px solid #1ABC9C'
-                  : '4px solid transparent',
-                textDecoration: 'none',
-                fontWeight: isActive ? 'bold' : 'normal',
-              })}
+              className={({ isActive }) =>
+                `nav-link-custom ${isActive ? 'active' : 'inactive'}`
+              }
             >
               <i className={`bi ${link.icon}`}></i>
               {link.name}

@@ -1,19 +1,61 @@
-.sidebar-link {
-  border-radius: 5px;
-  padding: 10px 12px;
+.sidebar {
+  width: 230px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: #2c3e50;
+  color: #fff;
+  transition: left 0.3s ease;
+  z-index: 1000;
+  height: 100vh;
+  padding: 1rem;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.nav-link-custom {
   display: flex;
   align-items: center;
   gap: 10px;
+  border-radius: 5px;
+  padding: 10px 12px;
   text-decoration: none;
-  transition: background 0.2s;
+  color: #fff;
+  transition: all 0.2s;
 }
-.sidebar-link.active {
+
+.nav-link-custom.active {
   background-color: #3498db;
   font-weight: bold;
-  border-left: 4px solid #1ABC9C;
+  border-left: 4px solid #1abc9c;
 }
-.sidebar-link.inactive {
-  background-color: #34495E;
+
+.nav-link-custom.inactive {
+  background-color: #34495e;
   font-weight: normal;
   border-left: 4px solid transparent;
+}
+/* Dashboard.css */
+.dashboard-card {
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  color: #fff;
+  margin-bottom: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-3px);
+}
+
+.dashboard-card-description {
+  font-size: 0.75rem;
+  margin-top: 8px;
+  color: #f0f0f0;
 }
