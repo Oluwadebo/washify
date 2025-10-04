@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
 const Dashboard = ({ orders, expenses }) => {
   // same filter states as Orders
-    const today = new Date();
+  const today = new Date();
   const currentMonth = today.getMonth() + 1;
   const currentYear = today.getFullYear();
   const [filterType, setFilterType] = useState('today');
@@ -10,9 +10,9 @@ const Dashboard = ({ orders, expenses }) => {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [startDate, setStartDate] = useState(today.toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
-  
 
-      const months = [
+  
+  const months = [
     { value: 1, label: 'January' },
     { value: 2, label: 'February' },
     { value: 3, label: 'March' },
@@ -30,7 +30,7 @@ const Dashboard = ({ orders, expenses }) => {
   const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
 
   // ✅ Filtering Logic (same as Orders.js)
-   const filterByType = (itemDate) => {
+  const filterByType = (itemDate) => {
     const date = new Date(itemDate);
 
     if (filterType === 'today') {
@@ -70,30 +70,68 @@ const Dashboard = ({ orders, expenses }) => {
   const netProfit = totalIncome - totalExpenses;
   const totalBalance =
     filteredOrders
-      .filter((o) => o.paymentStatus === "Paid")
+      .filter((o) => o.paymentStatus === 'Paid')
       .reduce((acc, o) => acc + Number(o.price), 0) - totalExpenses;
   const totalPending = filteredOrders
-    .filter((o) => o.paymentStatus === "Pending")
+    .filter((o) => o.paymentStatus === 'Pending')
     .reduce((acc, o) => acc + Number(o.price), 0);
 
   // ✅ Card style
+  const cards = [
+    {
+      title: 'Total Orders',
+      value: totalOrders,
+      bgColor: '#3498DB',
+      description: 'Number of orders added',
+    },
+    {
+      title: 'Total Income',
+      value: `₦${totalIncome}`,
+      bgColor: '#1ABC9C',
+      description: 'Revenue from all orders',
+    },
+    {
+      title: 'Total Expenses',
+      value: `₦${totalExpenses}`,
+      bgColor: '#E74C3C',
+      description: 'Business running costs',
+    },
+    {
+      title: 'Net Profit',
+      value: `₦${netProfit}`,
+      bgColor: '#F39C12',
+      description: 'Income - Expenses',
+    },
+    {
+      title: 'Total Balance',
+      value: `₦${totalBalance}`,
+      bgColor: '#9B59B6',
+      description: 'Money from PAID orders minus expenses',
+    },
+    {
+      title: 'Total Pending',
+      value: `₦${totalPending}`,
+      bgColor: '#16A085',
+      description: 'Expected money from pending orders',
+    },
+  ];
   const cardStyle = (bgColor) => ({
     backgroundColor: bgColor,
-    color: "#fff",
-    borderRadius: "8px",
-    padding: "20px",
-    textAlign: "center",
+    color: '#fff',
+    borderRadius: '8px',
+    padding: '20px',
+    textAlign: 'center',
   });
 
   const descriptionStyle = {
-    fontSize: "0.7rem",
-    marginTop: "8px",
-    color: "#f0f0f0",
+    fontSize: '0.7rem',
+    marginTop: '8px',
+    color: '#f0f0f0',
   };
 
   return (
     <div>
-      <h2 style={{ color: "#2C3E50" }}>Dashboard</h2>
+      <h2 style={{ color: '#2C3E50' }}>Dashboard</h2>
 
       {/* 🔹 Filter Section */}
       <div className="card p-3 mb-4 shadow-sm">
@@ -111,7 +149,7 @@ const Dashboard = ({ orders, expenses }) => {
             </select>
           </div>
 
-{filterType === 'month' && (
+          {filterType === 'month' && (
             <>
               <div className="col-md-3">
                 <label className="form-label">Select Month</label>
@@ -143,7 +181,7 @@ const Dashboard = ({ orders, expenses }) => {
               </div>
             </>
           )}
-          {filterType === "custom" && (
+          {filterType === 'custom' && (
             <>
               <div className="col-md-3">
                 <label className="form-label">Start Date</label>
@@ -170,59 +208,15 @@ const Dashboard = ({ orders, expenses }) => {
 
       {/* 🔹 Dashboard Cards */}
       <div className="row mt-4">
-        <div className="col-md-4 mb-3">
-          <div style={cardStyle("#3498DB")}>
-            <h5>Total Orders</h5>
-            <p style={descriptionStyle}>Number of orders added</p>
-            <p>{totalOrders}</p>
+        {cards.map((card) => (
+          <div className="col-md-4 mb-3" key={card.title}>
+            <div style={{ ...cardStyle(card.bgColor) }}>
+              <h5>{card.title}</h5>
+              <p style={descriptionStyle}>{card.description}</p>
+              <p>{card.value}</p>
+            </div>
           </div>
-        </div>
-
-        <div className="col-md-4 mb-3">
-          <div style={cardStyle("#1ABC9C")}>
-            <h5>Total Income</h5>
-            <p style={descriptionStyle}>
-              Revenue from all orders (paid + pending)
-            </p>
-            <p>₦{totalIncome}</p>
-          </div>
-        </div>
-
-        <div className="col-md-4 mb-3">
-          <div style={cardStyle("#E74C3C")}>
-            <h5>Total Expenses</h5>
-            <p style={descriptionStyle}>Business running costs</p>
-            <p>₦{totalExpenses}</p>
-          </div>
-        </div>
-
-        <div className="col-md-4 mb-3">
-          <div style={cardStyle("#F39C12")}>
-            <h5>Net Profit</h5>
-            <p style={descriptionStyle}>Income - Expenses</p>
-            <p>₦{netProfit}</p>
-          </div>
-        </div>
-
-        <div className="col-md-4 mb-3">
-          <div style={cardStyle("#9B59B6")}>
-            <h5>Total Balance</h5>
-            <p style={descriptionStyle}>
-              Money from PAID orders minus expenses
-            </p>
-            <p>₦{totalBalance}</p>
-          </div>
-        </div>
-
-        <div className="col-md-4 mb-3">
-          <div style={cardStyle("#16A085")}>
-            <h5>Total Pending</h5>
-            <p style={descriptionStyle}>
-              Expected money from pending orders
-            </p>
-            <p>₦{totalPending}</p>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
