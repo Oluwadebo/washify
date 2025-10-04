@@ -10,10 +10,31 @@ const Orders = ({ orders, setOrders }) => {
   const [editingOrder, setEditingOrder] = useState(null);
 
   // 🔹 Filter states
-  const today = new Date().toISOString().split('T')[0];
-  const [filterType, setFilterType] = useState('today'); // default = current month
-  const [startDate, setStartDate] = useState(today);
-  const [endDate, setEndDate] = useState(today);
+    const today = new Date();
+  const currentMonth = today.getMonth() + 1;
+  const currentYear = today.getFullYear();
+  const [filterType, setFilterType] = useState('today');
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [startDate, setStartDate] = useState(today.toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
+  
+      const months = [
+    { value: 1, label: 'January' },
+    { value: 2, label: 'February' },
+    { value: 3, label: 'March' },
+    { value: 4, label: 'April' },
+    { value: 5, label: 'May' },
+    { value: 6, label: 'June' },
+    { value: 7, label: 'July' },
+    { value: 8, label: 'August' },
+    { value: 9, label: 'September' },
+    { value: 10, label: 'October' },
+    { value: 11, label: 'November' },
+    { value: 12, label: 'December' },
+  ];
+
+  const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
 
   // ✅ Add order
   const handleAddOrder = (e) => {
@@ -52,30 +73,20 @@ const Orders = ({ orders, setOrders }) => {
   // ✅ Filtering Logic
   const filteredOrders = orders.filter((order) => {
     const orderDate = new Date(order.date);
-
     if (filterType === 'today') {
       return orderDate.toDateString() === new Date().toDateString();
     }
-
-    if (filterType === 'monthly') {
+    if (filterType === 'month') {
       return (
-        orderDate.getMonth() === new Date().getMonth() &&
-        orderDate.getFullYear() === new Date().getFullYear()
+        orderDate.getMonth() + 1 === Number(selectedMonth) &&
+        orderDate.getFullYear() === Number(selectedYear)
       );
     }
-
-    if (filterType === 'yearly') {
-      return orderDate.getFullYear() === new Date().getFullYear();
-    }
-
     if (filterType === 'custom') {
       if (!startDate || !endDate) return true;
-
-      // Convert to YYYY-MM-DD only (remove time issues)
       const orderDateOnly = new Date(order.date).toISOString().split('T')[0];
       return orderDateOnly >= startDate && orderDateOnly <= endDate;
     }
-
     return true;
   });
 
@@ -94,12 +105,43 @@ const Orders = ({ orders, setOrders }) => {
               onChange={(e) => setFilterType(e.target.value)}
             >
               <option value="today">Today</option>
-              <option value="monthly">This Month</option>
-              <option value="yearly">This Year</option>
+              <option value="month">By Month</option>
               <option value="custom">Custom Range</option>
             </select>
           </div>
 
+{filterType === 'month' && (
+            <>
+              <div className="col-md-3">
+                <label className="form-label">Select Month</label>
+                <select
+                  className="form-select"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                >
+                  {months.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-md-3">
+                <label className="form-label">Select Year</label>
+                <select
+                  className="form-select"
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                >
+                  {years.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
           {filterType === 'custom' && (
             <>
               <div className="col-md-3">
