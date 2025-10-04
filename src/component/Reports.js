@@ -481,7 +481,7 @@ const Reports = ({ orders, expenses }) => {
                 </>
               ) : (
                 <>
-                   <i className="bi bi-file-earmark-excel me-1"></i> Excel
+                  <i className="bi bi-file-earmark-excel me-1"></i> Excel
                 </>
               )}
             </button>
@@ -581,7 +581,7 @@ const Reports = ({ orders, expenses }) => {
       {/* Orders Table */}
       <h5>Orders</h5>
       <div className="table-responsive">
-        <table className="table table-bordered table-striped text-center">
+        <table className="table table-bordered table-striped text-center table-hover">
           <thead style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
             <tr>
               <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
@@ -642,7 +642,7 @@ const Reports = ({ orders, expenses }) => {
       {/* Expenses Table */}
       <h5>Expenses</h5>
       <div className="table-responsive">
-        <table className="table table-bordered table-striped text-center">
+        <table className="table table-bordered table-striped text-center table-hover">
           <thead style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
             <tr>
               <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>

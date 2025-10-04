@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import useDateFilter from './useDateFilter';
+import FilterControl from './FilterControl';
 
 const Orders = ({ orders, setOrders }) => {
   const [customer, setCustomer] = useState('');
@@ -9,44 +11,34 @@ const Orders = ({ orders, setOrders }) => {
   // 🔹 Edit state
   const [editingOrder, setEditingOrder] = useState(null);
 
-  // 🔹 Filter states
-    const today = new Date();
-  const currentMonth = today.getMonth() + 1;
-  const currentYear = today.getFullYear();
-  const [filterType, setFilterType] = useState('today');
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
-  const [selectedYear, setSelectedYear] = useState(currentYear);
-  const [startDate, setStartDate] = useState(today.toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
-  
-      const months = [
-    { value: 1, label: 'January' },
-    { value: 2, label: 'February' },
-    { value: 3, label: 'March' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'May' },
-    { value: 6, label: 'June' },
-    { value: 7, label: 'July' },
-    { value: 8, label: 'August' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'October' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'December' },
-  ];
+  // 🔹 Use the reusable date filter hook
+  const {
+    filterType,
+    setFilterType,
+    selectedMonth,
+    setSelectedMonth,
+    selectedYear,
+    setSelectedYear,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    months,
+    years,
+    filterByDate,
+  } = useDateFilter();
 
-  const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
-
-  // ✅ Add order
+  // ✅ Add new order
   const handleAddOrder = (e) => {
     e.preventDefault();
 
     const newOrder = {
       id: Date.now(),
       customer,
-      price: Number(price),
       service,
+      price: Number(price),
       paymentStatus,
-      date: new Date().toISOString(), // store order date
+      date: new Date().toISOString(),
     };
 
     setOrders([newOrder, ...orders]);
@@ -70,101 +62,29 @@ const Orders = ({ orders, setOrders }) => {
     setOrders(orders.filter((order) => order.id !== id));
   };
 
-  // ✅ Filtering Logic
-  const filteredOrders = orders.filter((order) => {
-    const orderDate = new Date(order.date);
-    if (filterType === 'today') {
-      return orderDate.toDateString() === new Date().toDateString();
-    }
-    if (filterType === 'month') {
-      return (
-        orderDate.getMonth() + 1 === Number(selectedMonth) &&
-        orderDate.getFullYear() === Number(selectedYear)
-      );
-    }
-    if (filterType === 'custom') {
-      if (!startDate || !endDate) return true;
-      const orderDateOnly = new Date(order.date).toISOString().split('T')[0];
-      return orderDateOnly >= startDate && orderDateOnly <= endDate;
-    }
-    return true;
-  });
+  // ✅ Apply date filtering
+  const filteredOrders = orders.filter((order) => filterByDate(order.date));
 
   return (
     <div>
       <h2 style={{ color: '#2C3E50' }}>Orders</h2>
 
-      {/* 🔹 Filter Section */}
+      {/* 🔹 Reusable Filter Section */}
       <div className="card p-3 mb-4 shadow-sm">
-        <div className="row g-3 align-items-end">
-          <div className="col-md-3">
-            <label className="form-label">Filter By</label>
-            <select
-              className="form-select"
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-            >
-              <option value="today">Today</option>
-              <option value="month">By Month</option>
-              <option value="custom">Custom Range</option>
-            </select>
-          </div>
-
-{filterType === 'month' && (
-            <>
-              <div className="col-md-3">
-                <label className="form-label">Select Month</label>
-                <select
-                  className="form-select"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                >
-                  {months.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-md-3">
-                <label className="form-label">Select Year</label>
-                <select
-                  className="form-select"
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                >
-                  {years.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </>
-          )}
-          {filterType === 'custom' && (
-            <>
-              <div className="col-md-3">
-                <label className="form-label">Start Date</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div className="col-md-3">
-                <label className="form-label">End Date</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-            </>
-          )}
-        </div>
+        <FilterControl
+          filterType={filterType}
+          setFilterType={setFilterType}
+          selectedMonth={selectedMonth}
+          setSelectedMonth={setSelectedMonth}
+          selectedYear={selectedYear}
+          setSelectedYear={setSelectedYear}
+          startDate={startDate}
+          setStartDate={setStartDate}
+          endDate={endDate}
+          setEndDate={setEndDate}
+          months={months}
+          years={years}
+        />
       </div>
 
       {/* 🔹 Add Order Form */}
@@ -179,6 +99,7 @@ const Orders = ({ orders, setOrders }) => {
             required
           />
         </div>
+
         <div className="col-md-3">
           <select
             className="form-select"
@@ -190,6 +111,7 @@ const Orders = ({ orders, setOrders }) => {
             <option value="Dry Cleaning">Dry Cleaning</option>
           </select>
         </div>
+
         <div className="col-md-2">
           <input
             type="number"
@@ -200,6 +122,7 @@ const Orders = ({ orders, setOrders }) => {
             required
           />
         </div>
+
         <div className="col-md-2">
           <select
             className="form-select"
@@ -210,6 +133,7 @@ const Orders = ({ orders, setOrders }) => {
             <option value="Pending">Pending</option>
           </select>
         </div>
+
         <div className="col-md-2">
           <button type="submit" className="btn btn-primary w-100">
             Add Order
@@ -219,7 +143,7 @@ const Orders = ({ orders, setOrders }) => {
 
       {/* 🔹 Orders Table */}
       <h5>Orders List</h5>
-      <table className="table table-bordered table-striped table-hover shadow-sm text-center">
+      <table className="table table-bordered table-striped table-hover shadow-sm text-center table-responsive">
         <thead>
           <tr>
             <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>ID</th>
