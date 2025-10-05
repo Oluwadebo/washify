@@ -28,6 +28,10 @@ const Orders = ({ orders, setOrders }) => {
     filterByDate,
   } = useDateFilter();
 
+  // ✅ Get current logged-in user email
+  const storedUser = JSON.parse(localStorage.getItem('authUser'));
+  const currentUserEmail = storedUser?.email;
+
   // ✅ Add new order
   const handleAddOrder = (e) => {
     e.preventDefault();
@@ -39,6 +43,7 @@ const Orders = ({ orders, setOrders }) => {
       price: Number(price),
       paymentStatus,
       date: new Date().toISOString(),
+      userEmail: currentUserEmail, // 🔹 attach user email
     };
 
     setOrders([newOrder, ...orders]);
@@ -62,8 +67,10 @@ const Orders = ({ orders, setOrders }) => {
     setOrders(orders.filter((order) => order.id !== id));
   };
 
-  // ✅ Apply date filtering
-  const filteredOrders = orders.filter((order) => filterByDate(order.date));
+  // ✅ Apply date filtering AND user filtering
+  const filteredOrders = orders.filter(
+    (order) => order.userEmail === currentUserEmail && filterByDate(order.date)
+  );
 
   return (
     <div>
@@ -147,21 +154,11 @@ const Orders = ({ orders, setOrders }) => {
         <thead>
           <tr>
             <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>ID</th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Customer
-            </th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Service
-            </th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Price
-            </th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Status
-            </th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Actions
-            </th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Customer</th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Service</th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Price</th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Status</th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Actions</th>
           </tr>
         </thead>
         <tbody>

@@ -58,10 +58,14 @@ const Reports = ({ orders, expenses }) => {
   const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
 
   // Filtering Logic
-  const filterByType = (itemDate) => {
+  const storedUser = JSON.parse(localStorage.getItem('authUser'));
+  const currentUserEmail = storedUser?.email;
+
+  const filterByType = (itemDate, itemEmail) => {
     const date = new Date(itemDate);
+    if (itemEmail && itemEmail !== currentUserEmail) return false;
     if (filterType === 'today') {
-      return date.toDateString() === new Date().toDateString();
+      return date.toDateString() === today.toDateString();
     }
     if (filterType === 'month') {
       return (
@@ -71,7 +75,7 @@ const Reports = ({ orders, expenses }) => {
     }
     if (filterType === 'custom') {
       if (!startDate || !endDate) return true;
-      const onlyDate = new Date(date).toISOString().split('T')[0];
+      const onlyDate = date.toISOString().split('T')[0];
       return onlyDate >= startDate && onlyDate <= endDate;
     }
 
@@ -79,8 +83,12 @@ const Reports = ({ orders, expenses }) => {
   };
 
   // Apply filters
-  const filteredOrders = orders.filter((o) => filterByType(o.date));
-  const filteredExpenses = expenses.filter((e) => filterByType(e.date));
+  const filteredOrders = orders.filter(
+    (o) => filterByType(o.date, o.email)
+  );
+  const filteredExpenses = expenses.filter(
+    (e) => filterByType(e.date, e.email)
+  );
 
   // Totals
   const completedOrders = filteredOrders.filter(

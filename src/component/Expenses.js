@@ -25,8 +25,14 @@ const Expenses = ({ expenses, setExpenses }) => {
     filterByDate,
   } = useDateFilter();
 
-  // ✅ Apply filter to expenses
-  const filteredExpenses = expenses.filter((exp) => filterByDate(exp.date));
+  // ✅ Get current logged-in user email
+  const storedUser = JSON.parse(localStorage.getItem("authUser"));
+  const currentUserEmail = storedUser?.email;
+
+  // ✅ Apply filter to expenses + user email
+  const filteredExpenses = expenses.filter(
+    (exp) => exp.userEmail === currentUserEmail && filterByDate(exp.date)
+  );
 
   // ✅ Add new expense
   const handleAddExpense = (e) => {
@@ -38,6 +44,7 @@ const Expenses = ({ expenses, setExpenses }) => {
       category: category === "Other" ? customCategory : category,
       description,
       date: new Date().toISOString(),
+      userEmail: currentUserEmail, // 🔹 attach user email
     };
 
     setExpenses([newExpense, ...expenses]);

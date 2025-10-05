@@ -16,8 +16,9 @@ const FilterControl = ({
 }) => {
   return (
     <div className="row g-3 align-items-end mb-3">
+      {/* Filter Type */}
       <div className="col-md-3">
-        <label className="form-label">Filter By</label>
+        <label className="form-label fw-semibold">Filter By</label>
         <select
           className="form-select"
           value={filterType}
@@ -30,10 +31,11 @@ const FilterControl = ({
         </select>
       </div>
 
+      {/* Month & Year Selection */}
       {filterType === "month" && (
         <>
           <div className="col-md-3">
-            <label className="form-label">Month</label>
+            <label className="form-label fw-semibold">Month</label>
             <select
               className="form-select"
               value={selectedMonth}
@@ -47,7 +49,7 @@ const FilterControl = ({
             </select>
           </div>
           <div className="col-md-3">
-            <label className="form-label">Year</label>
+            <label className="form-label fw-semibold">Year</label>
             <select
               className="form-select"
               value={selectedYear}
@@ -63,9 +65,10 @@ const FilterControl = ({
         </>
       )}
 
+      {/* Year Only */}
       {filterType === "year" && (
         <div className="col-md-3">
-          <label className="form-label">Year</label>
+          <label className="form-label fw-semibold">Year</label>
           <select
             className="form-select"
             value={selectedYear}
@@ -80,10 +83,11 @@ const FilterControl = ({
         </div>
       )}
 
+      {/* Custom Date Range */}
       {filterType === "custom" && (
         <>
           <div className="col-md-3">
-            <label className="form-label">Start Date</label>
+            <label className="form-label fw-semibold">Start Date</label>
             <input
               type="date"
               className="form-control"
@@ -92,7 +96,7 @@ const FilterControl = ({
             />
           </div>
           <div className="col-md-3">
-            <label className="form-label">End Date</label>
+            <label className="form-label fw-semibold">End Date</label>
             <input
               type="date"
               className="form-control"

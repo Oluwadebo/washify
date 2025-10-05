@@ -19,26 +19,39 @@ const Dashboard = ({ orders, expenses }) => {
     filterByDate,
   } = useDateFilter();
 
-  // Filter data
-  const filteredOrders = orders.filter((o) => filterByDate(o.date));
-  const filteredExpenses = expenses.filter((e) => filterByDate(e.date));
+  // ✅ Get current logged-in user email
+  const storedUser = JSON.parse(localStorage.getItem('authUser'));
+  const currentUserEmail = storedUser?.email;
 
-  // Calculations
+  // ✅ Filter data by date AND by logged-in user email
+  const filteredOrders = orders.filter(
+    (o) => o.userEmail === currentUserEmail && filterByDate(o.date)
+  );
+
+  const filteredExpenses = expenses.filter(
+    (e) => e.userEmail === currentUserEmail && filterByDate(e.date)
+  );
+
+  // ✅ Calculations
   const totalOrders = filteredOrders.length;
   const totalIncome = filteredOrders.reduce((acc, o) => acc + Number(o.price), 0);
   const totalExpenses = filteredExpenses.reduce((acc, e) => acc + Number(e.amount), 0);
   const netProfit = totalIncome - totalExpenses;
+
   const totalBalance =
     filteredOrders
       .filter((o) => o.paymentStatus === 'Paid')
       .reduce((acc, o) => acc + Number(o.price), 0) - totalExpenses;
+
   const totalPending = filteredOrders
     .filter((o) => o.paymentStatus === 'Pending')
     .reduce((acc, o) => acc + Number(o.price), 0);
 
+  // ✅ Currency formatter
   const formatCurrency = (amount) =>
     new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(amount);
 
+  // ✅ Dashboard Cards
   const cards = [
     { title: 'Total Orders', value: totalOrders, bgColor: '#3498DB', description: 'Number of orders added' },
     { title: 'Total Income', value: formatCurrency(totalIncome), bgColor: '#1ABC9C', description: 'Revenue from all orders' },
