@@ -87,7 +87,7 @@ const Dashboard = () => {
       title: 'Total Orders',
       value: totalOrders,
       bgColor: '#3498DB',
-      description: 'Number of orders added',
+      description: 'Number of orders recieved',
     },
     {
       title: 'Total Income',
@@ -111,7 +111,7 @@ const Dashboard = () => {
       title: 'Total Balance',
       value: formatCurrency(totalBalance),
       bgColor: totalBalance >= 0 ? '#9B59B6' : '#863a32ff',
-      description: 'PAID orders - expenses',
+      description: 'Paid orders - expenses',
     },
     {
       title: 'Total Paid',
@@ -151,7 +151,7 @@ const Dashboard = () => {
       </div>
 
       {/* ✅ Dashboard Cards */}
-      <div className="row mt-4">
+      <div className="row mt-4 text-center">
         {cards.map((card) => (
           <div className="col-6 col-md-3 mb-3" key={card.title}>
             <div

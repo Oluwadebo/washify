@@ -43,13 +43,14 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     >
       {/* ✅ Top Section - Brand (Dynamic) */}
       <div>
-        <h2 className='text-center'>ADMIN</h2>
-        <div className="text-center mb-3 d-flex">
+        <h2 className="text-center">ADMIN</h2>
+        <div className="text-center mb-3">
           <img
             src={logo}
             alt="Shop Logo"
+            onError={(e) => (e.target.src = '/favicon.png')}
             style={{
-              width: '90px',
+              width: '60px',
               height: '60px',
               borderRadius: '50%',
               objectFit: 'cover',
@@ -57,7 +58,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             }}
           />
           <h5
-            className="mt-3 text-uppercase px-2"
+            className="mt-3 text-uppercase"
             style={{
               color: '#1ABC9C',
               fontWeight: '600',

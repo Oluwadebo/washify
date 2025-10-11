@@ -36,7 +36,7 @@ const Login = () => {
   return (
     <div className="d-flex justify-content-center align-items-center vh-100" style={{ backgroundColor: '#f8f9fa' }}>
       <div className="card shadow p-4" style={{ width: '100%', maxWidth: '400px', borderRadius: '15px', borderTop: '5px solid #2C3E50' }}>
-        <h4 className="text-center mb-4 fw-bold" style={{ color: '#2C3E50' }}>Laundry Shop Admin</h4>
+        <h4 className="text-center mb-4 fw-bold" style={{ color: '#2C3E50' }}>Shop Admin</h4>
 
         {error && <div className="alert alert-danger py-2">{error}</div>}
 

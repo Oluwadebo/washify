@@ -6,6 +6,7 @@ import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Pie, Bar } from 'react-chartjs-2';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import {
   Chart as ChartJS,
   Title,
@@ -24,7 +25,8 @@ ChartJS.register(
   ArcElement,
   CategoryScale,
   LinearScale,
-  BarElement
+  BarElement,
+  ChartDataLabels
 );
 
 const Reports = () => {
@@ -103,7 +105,6 @@ const Reports = () => {
       currency: 'NGN',
     }).format(num);
   const formatCurrencyPDF = (num) => `NGN ${num.toLocaleString()}`;
-
   // Chart Data
   const incomeExpenseData = {
     labels: ['Completed Income', 'Pending Income', 'Expenses'],
@@ -113,6 +114,32 @@ const Reports = () => {
         backgroundColor: ['#2ecc71', '#f1c40f', '#e74c3c'],
       },
     ],
+  };
+  const pieOptions = {
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      datalabels: {
+        color: '#fff',
+        font: {
+          weight: 'bold',
+        },
+        formatter: (value, context) => {
+          if (value === 0) return ''; // 🔥 Hide labels for zero amounts
+
+          const label = context.chart.data.labels[context.dataIndex];
+          const total = context.chart.data.datasets[0].data.reduce(
+            (a, b) => a + b,
+            0
+          );
+          const percentage = ((value / total) * 100).toFixed(1) + '%';
+          const formattedValue = formatCurrency(value);
+
+          return `${label}\n${formattedValue}\n(${percentage})`;
+        },
+      },
+    },
   };
 
   const allDates = Array.from(
@@ -153,6 +180,26 @@ const Reports = () => {
         backgroundColor: '#f1c40f',
       },
     ],
+  };
+  const barOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      datalabels: {
+        color: '#fff',
+        font: {
+          weight: 'bold',
+        },
+        formatter: (value, context) => {
+          if (value === 0) return ''; // 🔥 Hide labels for zero amounts
+          const formattedValue = formatCurrency(value);
+
+          return `${formattedValue}`;
+        },
+      },
+    },
   };
 
   // Export to Excel
@@ -265,6 +312,8 @@ const Reports = () => {
         }
       };
     });
+    // ✅ Small delay to ensure image rendering finishes
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Header
     doc.setFontSize(18).setFont('helvetica', 'bold');
@@ -291,7 +340,6 @@ const Reports = () => {
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 52, {
       align: 'center',
     });
-
     // Metrics Table
     doc.setFontSize(12).setFont('helvetica', 'bold');
     doc.text('Business Metrics Summary', 14, 56);
@@ -308,9 +356,7 @@ const Reports = () => {
       headStyles: { fillColor: [52, 73, 94], textColor: [255, 255, 255] },
       bodyStyles: { textColor: 50 },
     });
-
     let currentY = doc.lastAutoTable.finalY + 13;
-
     // Charts
     const pieImg =
       pieRef.current && pieRef.current.toBase64Image
@@ -320,7 +366,6 @@ const Reports = () => {
       barRef.current && barRef.current.toBase64Image
         ? barRef.current.toBase64Image()
         : null;
-
     doc.setFontSize(12).setFont('helvetica', 'bold');
     doc.text('Business Performance Charts', 105, currentY - 6, {
       align: 'center',
@@ -328,7 +373,6 @@ const Reports = () => {
     doc.setDrawColor(52, 73, 94);
     doc.line(14, currentY - 4, 196, currentY - 4);
     currentY += 4;
-
     if (pieImg) {
       doc.setFontSize(10).setFont('helvetica', 'normal');
       doc.text('Income Distribution', 35, currentY - 2);
@@ -392,23 +436,35 @@ const Reports = () => {
       headStyles: { fillColor: [52, 73, 94], textColor: [255, 255, 255] },
       styles: { fontSize: 9 },
     });
-
     // Signature
-    const signatureY = doc.lastAutoTable.finalY + 20;
+    let lastTableY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 260;
+    if (lastTableY > 270) {
+      doc.addPage();
+      lastTableY = 20;
+    }
+    const signatureY = lastTableY + 20;
     doc.line(20, signatureY, 80, signatureY);
-    doc.text(`Prepared By: ${shopName.toUpperCase()}`, 20, signatureY + 5);
+    doc.text(
+      `Prepared By: ${(shopName || 'SHOP').toUpperCase()}`,
+      20,
+      signatureY + 5
+    );
     doc.line(130, signatureY, 190, signatureY);
-    doc.text(`Approved By: ${admin.toUpperCase()}`, 180, signatureY + 5, {
-      align: 'right',
-    });
-
+    doc.text(
+      `Approved By: ${(admin || 'ADMIN').toUpperCase()}`,
+      180,
+      signatureY + 5,
+      { align: 'right' }
+    );
     // Page numbers
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-      if (doc.setGState) {
-        const gState = doc.GState({ opacity: 0.2 }); // 10% visible
+      if (doc.GState && doc.setGState) {
+        const gState = doc.GState({ opacity: 0.2 });
         doc.setGState(gState);
+      } else {
+        doc.setTextColor(180); // fallback dim color
       }
       doc.setFontSize(50);
       doc.setTextColor(150);
@@ -421,7 +477,7 @@ const Reports = () => {
           align: 'center',
         }
       );
-      if (doc.setGState) {
+      if (doc.GState && doc.setGState) {
         const gState = doc.GState({ opacity: 1 });
         doc.setGState(gState);
       }
@@ -431,7 +487,6 @@ const Reports = () => {
       doc.setTextColor(100);
       doc.text(`Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
     }
-
     doc.save(`Report_${reportPeriod}.pdf`);
     setLoading(false);
   };
@@ -442,25 +497,21 @@ const Reports = () => {
       title: 'Total Income',
       value: formatCurrency(totalIncome),
       bgColor: '#1ABC9C',
-      description: 'Revenue from all orders',
     },
     {
       title: 'Total Pending',
       value: formatCurrency(totalPending),
       bgColor: '#F39C12',
-      description: 'Pending orders',
     },
     {
       title: 'Total Expenses',
       value: formatCurrency(totalExpenses),
       bgColor: '#e73c4aff',
-      description: 'Business running costs',
     },
     {
       title: 'Total Balance',
       value: formatCurrency(totalBalance),
       bgColor: totalBalance >= 0 ? '#1ABC9C' : '#863a32ff',
-      description: 'Income - Expenses',
     },
   ];
 
@@ -535,7 +586,7 @@ const Reports = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="row mt-4">
+      <div className="row mt-4 text-center">
         {cards.map((card) => (
           <div className="col-6 col-md-3 mb-3" key={card.title}>
             <div
@@ -546,7 +597,6 @@ const Reports = () => {
               }}
             >
               <h5>{card.title}</h5>
-              <p className="mb-1 small">{card.description}</p>
               <h4>{card.value}</h4>
             </div>
           </div>
@@ -555,23 +605,48 @@ const Reports = () => {
 
       {/* Charts */}
       <div className="row mt-4">
-        <div className="col-md-6 col-10 mb-3">
-          <h6>Income vs Pending vs Expenses</h6>
-          <div className="p-2 border rounded" style={{ minHeight: '280px' }}>
+        <div className="col-md-6 col-12 mb-3">
+          <h6 className="fw-bold text-center text-secondary mb-2">Income vs Pending vs Expenses</h6>
+          <div
+            className="p-2 border rounded text-center"
+            style={{
+  height: '45vh',
+  minHeight: '250px',
+  position: 'relative',
+}}
+          >
             <Pie
-              ref={pieRef}
               data={incomeExpenseData}
-              options={{ maintainAspectRatio: false }}
+              options={{
+                ...pieOptions,
+                responsive: true,
+                maintainAspectRatio: false,
+              }}
+              plugins={[ChartDataLabels]}
+              ref={pieRef}
             />
           </div>
         </div>
-        <div className="col-md-6 col-10 mb-3">
-          <h6>Daily Breakdown</h6>
-          <div className="p-2 border rounded" style={{ minHeight: '280px' }}>
+        <div className="col-md-6 col-12 mb-3">
+          <h6 className="fw-bold text-center text-secondary mb-2">Daily Breakdown</h6>
+          <div
+            className="p-2 border rounded"
+            style={{
+  height: '45vh',
+  minHeight: '250px',
+  position: 'relative',
+}}
+          >
             <Bar
               ref={barRef}
               data={mergedBarData}
-              options={{ responsive: true, maintainAspectRatio: false }}
+              // options={{ responsive: true, maintainAspectRatio: false }}
+              options={{
+                ...barOptions,
+                responsive: true,
+                maintainAspectRatio: false,
+              }}
+              plugins={[ChartDataLabels]}
             />
           </div>
         </div>

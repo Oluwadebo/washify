@@ -31,8 +31,14 @@ const Signup = () => {
 
     if (name === 'logo' && files.length > 0) {
       const file = files[0];
-      setForm({ ...form, logo: file });
-      setPreview(URL.createObjectURL(file));
+      const reader = new FileReader();
+
+      reader.onloadend = () => {
+        setForm({ ...form, logo: reader.result }); // store base64
+        setPreview(reader.result); // show preview
+      };
+
+      reader.readAsDataURL(file); // ✅ convert to base64
     } else {
       setForm({ ...form, [name]: value });
 
@@ -53,7 +59,13 @@ const Signup = () => {
     e.preventDefault();
     setError('');
 
-    if (!form.FirstName || !form.LastName || !form.shopName || !form.email || !form.password) {
+    if (
+      !form.FirstName ||
+      !form.LastName ||
+      !form.shopName ||
+      !form.email ||
+      !form.password
+    ) {
       setError('All fields are required!');
       return;
     }
@@ -69,7 +81,7 @@ const Signup = () => {
         ...form,
         email: form.email.trim().toLowerCase(),
         password: form.password.trim(),
-        logo: preview,
+        logo: form.logo, // ✅ already base64 now
       });
       setLoading(false);
       navigate('/login');
@@ -152,7 +164,7 @@ const Signup = () => {
                 emailStatus === 'exists'
                   ? 'is-invalid'
                   : emailStatus === 'unavailable'
-                  ? 'is-valid' 
+                  ? 'is-valid'
                   : ''
               }`}
               name="email"
