@@ -5,9 +5,14 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const navigate = useNavigate();
 
   // ✅ Get user info from localStorage
-  const storedUser = JSON.parse(localStorage.getItem('authUser'));
+  let storedUser = null;
+  try {
+    storedUser = JSON.parse(localStorage.getItem('authUser'));
+  } catch (err) {
+    localStorage.removeItem('authUser'); // clear corrupted data
+  }
   const shopName = storedUser?.shopName || 'Laundry Shop';
-  const logo = storedUser?.logo || '/images/brand.png';
+  const logo = storedUser?.logo || '/favicon.png';
 
   const navLinks = [
     { name: 'Dashboard', path: '/', icon: 'bi-speedometer2' },
@@ -38,12 +43,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     >
       {/* ✅ Top Section - Brand (Dynamic) */}
       <div>
-        <div className="text-center mb-3">
+        <h2 className='text-center'>ADMIN</h2>
+        <div className="text-center mb-3 d-flex">
           <img
             src={logo}
             alt="Shop Logo"
             style={{
-              width: '60px',
+              width: '90px',
               height: '60px',
               borderRadius: '50%',
               objectFit: 'cover',
@@ -51,7 +57,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             }}
           />
           <h5
-            className="mt-2 text-uppercase"
+            className="mt-3 text-uppercase px-2"
             style={{
               color: '#1ABC9C',
               fontWeight: '600',
@@ -73,7 +79,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                   `nav-link-custom ${isActive ? 'active' : 'inactive'}`
                 }
               >
-                <i className={`bi ${link.icon} me-2`}></i>
+                <i className={`bi ${link.icon} me-2`} title={link.name}></i>
                 {link.name}
               </NavLink>
             </li>

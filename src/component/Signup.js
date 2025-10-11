@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { checkEmail, saveUser } from './apiService';
 
 const Signup = () => {
   const navigate = useNavigate();
+  const errorRef = useRef(null);
+
   const [form, setForm] = useState({
-    fullName: '',
+    FirstName: '',
+    LastName: '',
     shopName: '',
     email: '',
     password: '',
@@ -12,7 +16,15 @@ const Signup = () => {
   });
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState('');
+  const [emailStatus, setEmailStatus] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [error]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -23,38 +35,54 @@ const Signup = () => {
       setPreview(URL.createObjectURL(file));
     } else {
       setForm({ ...form, [name]: value });
+
+      if (name === 'email') {
+        const trimmedEmail = value.trim().toLowerCase();
+        if (!trimmedEmail) return setEmailStatus(null);
+
+        setEmailStatus('checking');
+        setTimeout(async () => {
+          const status = await checkEmail(trimmedEmail);
+          setEmailStatus(status);
+        }, 400);
+      }
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
 
-    if (!form.fullName || !form.shopName || !form.email || !form.password) {
+    if (!form.FirstName || !form.LastName || !form.shopName || !form.email || !form.password) {
       setError('All fields are required!');
       return;
     }
 
-    // Convert logo to base64 before storing
-    if (form.logo) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const userData = {
-          ...form,
-          logo: reader.result,
-        };
-        localStorage.setItem('authUser', JSON.stringify(userData));
-        navigate('/login');
-      };
-      reader.readAsDataURL(form.logo);
-    } else {
-      localStorage.setItem('authUser', JSON.stringify(form));
+    if (emailStatus === 'exists') {
+      setError('This email is already registered. Please log in instead.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await saveUser({
+        ...form,
+        email: form.email.trim().toLowerCase(),
+        password: form.password.trim(),
+        logo: preview,
+      });
+      setLoading(false);
       navigate('/login');
+    } catch (err) {
+      console.error(err);
+      setError('Something went wrong. Please try again.');
+      setLoading(false);
     }
   };
 
   return (
     <div
-      className="d-flex justify-content-center align-items-center vh-100"
+      className="d-flex justify-content-center align-items-center my-2"
       style={{ backgroundColor: '#f8f9fa' }}
     >
       <div
@@ -70,24 +98,39 @@ const Signup = () => {
           Create Your Business Account
         </h4>
 
-        {error && <div className="alert alert-danger py-2">{error}</div>}
+        {error && (
+          <div ref={errorRef} className="alert alert-danger py-2">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
-          {/* Full Name */}
           <div className="mb-3">
-            <label className="form-label fw-semibold">Full Name</label>
+            <label className="form-label fw-semibold">First Name</label>
             <input
               type="text"
               className="form-control"
-              name="fullName"
-              value={form.fullName}
+              name="FirstName"
+              value={form.FirstName}
               onChange={handleChange}
-              placeholder="Enter your full name"
+              placeholder="Enter your first name"
               required
+              disabled={loading}
             />
           </div>
-
-          {/* Shop Name */}
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Last Name</label>
+            <input
+              type="text"
+              className="form-control"
+              name="LastName"
+              value={form.LastName}
+              onChange={handleChange}
+              placeholder="Enter your last name"
+              required
+              disabled={loading}
+            />
+          </div>
           <div className="mb-3">
             <label className="form-label fw-semibold">Shop Name</label>
             <input
@@ -96,26 +139,43 @@ const Signup = () => {
               name="shopName"
               value={form.shopName}
               onChange={handleChange}
-              placeholder="Enter your laundry shop name"
+              placeholder="Enter your shop name"
               required
+              disabled={loading}
             />
           </div>
-
-          {/* Email */}
           <div className="mb-3">
             <label className="form-label fw-semibold">Email</label>
             <input
               type="email"
-              className="form-control"
+              className={`form-control ${
+                emailStatus === 'exists'
+                  ? 'is-invalid'
+                  : emailStatus === 'unavailable'
+                  ? 'is-valid' 
+                  : ''
+              }`}
               name="email"
               value={form.email}
               onChange={handleChange}
               placeholder="Enter your email"
               required
+              disabled={loading}
             />
+            {emailStatus === 'checking' && (
+              <div className="form-text text-secondary">
+                Checking email availability...
+              </div>
+            )}
+            {emailStatus === 'exists' && (
+              <div className="invalid-feedback">
+                This email is already registered.
+              </div>
+            )}
+            {emailStatus === 'unavailable' && (
+              <div className="valid-feedback">Email is unused ✅</div>
+            )}
           </div>
-
-          {/* Password with Eye Icon */}
           <div className="mb-3 position-relative">
             <label className="form-label fw-semibold">Password</label>
             <input
@@ -126,9 +186,12 @@ const Signup = () => {
               onChange={handleChange}
               placeholder="Enter your password"
               required
+              disabled={loading}
             />
             <i
-              className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'} position-absolute`}
+              className={`bi ${
+                showPassword ? 'bi-eye-slash' : 'bi-eye'
+              } position-absolute`}
               style={{
                 right: '15px',
                 top: '40px',
@@ -138,8 +201,6 @@ const Signup = () => {
               onClick={() => setShowPassword(!showPassword)}
             ></i>
           </div>
-
-          {/* Logo Upload */}
           <div className="mb-3">
             <label className="form-label fw-semibold">Upload Logo</label>
             <input
@@ -148,7 +209,7 @@ const Signup = () => {
               name="logo"
               accept="image/*"
               onChange={handleChange}
-              required
+              disabled={loading}
             />
             {preview && (
               <div className="text-center mt-3">
@@ -167,20 +228,34 @@ const Signup = () => {
               </div>
             )}
           </div>
-
-          {/* Submit */}
           <button
             type="submit"
-            className="btn w-100 text-white fw-semibold"
-            style={{ backgroundColor: '#2C3E50' }}
+            className="btn w-100 text-white fw-semibold d-flex justify-content-center align-items-center"
+            style={{ backgroundColor: '#2C3E50', height: '45px' }}
+            disabled={
+              loading || emailStatus === 'checking' || emailStatus === 'exists'
+            }
           >
-            Sign Up
+            {loading ? (
+              <>
+                <div
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                ></div>
+                Creating account...
+              </>
+            ) : (
+              'Sign Up'
+            )}
           </button>
         </form>
-
         <p className="text-center mt-3 mb-0">
           Already have an account?{' '}
-          <Link to="/login" className="fw-semibold" style={{ color: '#2C3E50' }}>
+          <Link
+            to="/login"
+            className="fw-semibold"
+            style={{ color: '#2C3E50' }}
+          >
             Login
           </Link>
         </p>

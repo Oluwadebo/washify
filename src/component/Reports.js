@@ -1,4 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import useDateFilter from './useDateFilter';
+import FilterControl from './FilterControl';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -25,69 +27,61 @@ ChartJS.register(
   BarElement
 );
 
-const Reports = ({ orders, expenses }) => {
+const Reports = () => {
+  const [orders, setOrders] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const {
+    filterType,
+    setFilterType,
+    selectedMonth,
+    setSelectedMonth,
+    selectedYear,
+    setSelectedYear,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    months,
+    years,
+    filterByDate,
+  } = useDateFilter();
+
   const pieRef = useRef(null);
   const barRef = useRef(null);
 
-  const today = new Date();
-  const currentMonth = today.getMonth() + 1;
-  const currentYear = today.getFullYear();
-  const [filterType, setFilterType] = useState('month');
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
-  const [selectedYear, setSelectedYear] = useState(currentYear);
-  const [startDate, setStartDate] = useState(today.toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
+  let currentUserEmail = null;
+  let storedUser = null;
+  try {
+    storedUser = JSON.parse(localStorage.getItem('authUser'));
+    currentUserEmail = storedUser?.email;
+  } catch {
+    currentUserEmail = null;
+    localStorage.removeItem('authUser');
+  }
 
-  const [loading, setLoading] = useState(false);
+  const shopName = storedUser?.shopName || 'Shop Admin';
+  const logo = storedUser?.logo || '/favicon.png';
+  const admin = storedUser?.LastName || 'Admin';
 
-  const months = [
-    { value: 1, label: 'January' },
-    { value: 2, label: 'February' },
-    { value: 3, label: 'March' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'May' },
-    { value: 6, label: 'June' },
-    { value: 7, label: 'July' },
-    { value: 8, label: 'August' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'October' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'December' },
-  ];
+  // ✅ Load user's orders & expenses from localStorage
+  useEffect(() => {
+    if (currentUserEmail) {
+      const savedOrders = JSON.parse(localStorage.getItem(`orders`)) || [];
+      const savedExpenses = JSON.parse(localStorage.getItem(`expenses`)) || [];
 
-  const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
-
-  // Filtering Logic
-  const storedUser = JSON.parse(localStorage.getItem('authUser'));
-  const currentUserEmail = storedUser?.email;
-
-  const filterByType = (itemDate, itemEmail) => {
-    const date = new Date(itemDate);
-    if (itemEmail && itemEmail !== currentUserEmail) return false;
-    if (filterType === 'today') {
-      return date.toDateString() === today.toDateString();
+      setOrders(savedOrders);
+      setExpenses(savedExpenses);
     }
-    if (filterType === 'month') {
-      return (
-        date.getMonth() + 1 === Number(selectedMonth) &&
-        date.getFullYear() === Number(selectedYear)
-      );
-    }
-    if (filterType === 'custom') {
-      if (!startDate || !endDate) return true;
-      const onlyDate = date.toISOString().split('T')[0];
-      return onlyDate >= startDate && onlyDate <= endDate;
-    }
+  }, [currentUserEmail]);
 
-    return true;
-  };
-
-  // Apply filters
+  // ✅ Filtered data for logged-in user
   const filteredOrders = orders.filter(
-    (o) => filterByType(o.date, o.email)
+    (o) => o.userEmail === currentUserEmail && filterByDate(o.date)
   );
   const filteredExpenses = expenses.filter(
-    (e) => filterByType(e.date, e.email)
+    (e) => e.userEmail === currentUserEmail && filterByDate(e.date)
   );
 
   // Totals
@@ -100,7 +94,7 @@ const Reports = ({ orders, expenses }) => {
   const totalIncome = completedOrders.reduce((sum, o) => sum + o.price, 0);
   const totalPending = pendingOrders.reduce((sum, o) => sum + o.price, 0);
   const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
-  const netProfit = totalIncome - totalExpenses;
+  const totalBalance = totalIncome - totalExpenses;
 
   // Currency formatter
   const formatCurrency = (num) =>
@@ -176,7 +170,7 @@ const Reports = ({ orders, expenses }) => {
     ws.addRow(['Metric', 'Amount']);
     ws.addRow(['Total Income', totalIncome]);
     ws.addRow(['Total Expenses', totalExpenses]);
-    ws.addRow(['Net Profit', netProfit]);
+    ws.addRow(['Net Profit', totalBalance]);
 
     ws.addRow([]);
     ws.addRow(['Orders']);
@@ -236,13 +230,45 @@ const Reports = ({ orders, expenses }) => {
 
     // Logo
     const img = new Image();
-    img.src = '/images/brand.png';
-    await new Promise((resolve) => (img.onload = resolve));
-    doc.addImage(img, 'PNG', 14, 15, 30, 15);
+    img.crossOrigin = 'Anonymous';
+
+    // Validate logo path — fallback if broken
+    img.src =
+      logo && logo.startsWith('data:')
+        ? logo // base64 data image
+        : logo && logo !== '/favicon.png'
+        ? logo
+        : '/favicon.png';
+
+    // Wait for the image to load or fail safely
+    await new Promise((resolve) => {
+      img.onload = () => {
+        try {
+          doc.addImage(img, 'PNG', 14, 15, 30, 15);
+        } catch (err) {
+          console.warn('⚠️ Could not add image:', err);
+        }
+        resolve();
+      };
+      img.onerror = () => {
+        console.warn('⚠️ Image load failed, using default logo.');
+        try {
+          const fallback = new Image();
+          fallback.src = '/favicon.png';
+          fallback.onload = () => {
+            doc.addImage(fallback, 'PNG', 14, 15, 30, 15);
+            resolve();
+          };
+        } catch (err) {
+          console.warn('⚠️ Fallback logo also failed.');
+          resolve();
+        }
+      };
+    });
 
     // Header
     doc.setFontSize(18).setFont('helvetica', 'bold');
-    doc.text('My Laundry Shop', 60, 25);
+    doc.text(shopName.toUpperCase().substring(0, 30), 60, 25);
     doc.setFontSize(10).setFont('helvetica', 'normal');
     doc.text('40, Jomowoye Street, Irele, Ondo State', 196, 21, {
       align: 'right',
@@ -277,7 +303,7 @@ const Reports = ({ orders, expenses }) => {
         ['Total Income', formatCurrencyPDF(totalIncome)],
         ['Pending Income', formatCurrencyPDF(totalPending)],
         ['Total Expenses', formatCurrencyPDF(totalExpenses)],
-        ['Net Profit', formatCurrencyPDF(netProfit)],
+        ['Total Balance', formatCurrencyPDF(totalBalance)],
       ],
       headStyles: { fillColor: [52, 73, 94], textColor: [255, 255, 255] },
       bodyStyles: { textColor: 50 },
@@ -286,8 +312,15 @@ const Reports = ({ orders, expenses }) => {
     let currentY = doc.lastAutoTable.finalY + 13;
 
     // Charts
-    const pieImg = pieRef.current?.toBase64Image();
-    const barImg = barRef.current?.toBase64Image();
+    const pieImg =
+      pieRef.current && pieRef.current.toBase64Image
+        ? pieRef.current.toBase64Image()
+        : null;
+    const barImg =
+      barRef.current && barRef.current.toBase64Image
+        ? barRef.current.toBase64Image()
+        : null;
+
     doc.setFontSize(12).setFont('helvetica', 'bold');
     doc.text('Business Performance Charts', 105, currentY - 6, {
       align: 'center',
@@ -363,9 +396,11 @@ const Reports = ({ orders, expenses }) => {
     // Signature
     const signatureY = doc.lastAutoTable.finalY + 20;
     doc.line(20, signatureY, 80, signatureY);
-    doc.text('Prepared By: ANTHONY', 20, signatureY + 5);
+    doc.text(`Prepared By: ${shopName.toUpperCase()}`, 20, signatureY + 5);
     doc.line(130, signatureY, 190, signatureY);
-    doc.text('Approved By: DEBO', 180, signatureY + 5, { align: 'right' });
+    doc.text(`Approved By: ${admin.toUpperCase()}`, 180, signatureY + 5, {
+      align: 'right',
+    });
 
     // Page numbers
     const pageCount = doc.internal.getNumberOfPages();
@@ -377,10 +412,15 @@ const Reports = ({ orders, expenses }) => {
       }
       doc.setFontSize(50);
       doc.setTextColor(150);
-      doc.text('My Laundry Shop', pageWidth / 2, pageHeight / 2, {
-        angle: 30,
-        align: 'center',
-      });
+      doc.text(
+        shopName.toUpperCase().substring(0, 30),
+        pageWidth / 2,
+        pageHeight / 2,
+        {
+          angle: 30,
+          align: 'center',
+        }
+      );
       if (doc.setGState) {
         const gState = doc.GState({ opacity: 1 });
         doc.setGState(gState);
@@ -396,82 +436,56 @@ const Reports = ({ orders, expenses }) => {
     setLoading(false);
   };
 
+  // Summary cards
+  const cards = [
+    {
+      title: 'Total Income',
+      value: formatCurrency(totalIncome),
+      bgColor: '#1ABC9C',
+      description: 'Revenue from all orders',
+    },
+    {
+      title: 'Total Pending',
+      value: formatCurrency(totalPending),
+      bgColor: '#F39C12',
+      description: 'Pending orders',
+    },
+    {
+      title: 'Total Expenses',
+      value: formatCurrency(totalExpenses),
+      bgColor: '#e73c4aff',
+      description: 'Business running costs',
+    },
+    {
+      title: 'Total Balance',
+      value: formatCurrency(totalBalance),
+      bgColor: totalBalance >= 0 ? '#1ABC9C' : '#863a32ff',
+      description: 'Income - Expenses',
+    },
+  ];
+
   return (
     <div>
       <h2 style={{ color: '#2C3E50' }}>Reports</h2>
 
-      {/* Filters */}
+      {/* ✅ Filter Section */}
       <div className="card p-3 mb-4 shadow-sm">
+        <FilterControl
+          filterType={filterType}
+          setFilterType={setFilterType}
+          selectedMonth={selectedMonth}
+          setSelectedMonth={setSelectedMonth}
+          selectedYear={selectedYear}
+          setSelectedYear={setSelectedYear}
+          startDate={startDate}
+          setStartDate={setStartDate}
+          endDate={endDate}
+          setEndDate={setEndDate}
+          months={months}
+          years={years}
+        />
         <div className="row g-3 align-items-end">
-          <div className="col-md-3 col-12">
-            <label className="form-label">Filter By</label>
-            <select
-              className="form-select"
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-            >
-              <option value="today">Today</option>
-              <option value="month">By Month</option>
-              <option value="custom">Custom Range</option>
-            </select>
-          </div>
-
-          {/* Month + Year Dropdown */}
-          {filterType === 'month' && (
-            <>
-              <div className="col-md-2">
-                <label className="form-label">Select Month</label>
-                <select
-                  className="form-select"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                >
-                  {months.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-md-2">
-                <label className="form-label">Select Year</label>
-                <select
-                  className="form-select"
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                >
-                  {years.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </>
-          )}
-          {filterType === 'custom' && (
-            <>
-              <div className="col-md-3">
-                <label className="form-label">Start Date</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div className="col-md-3">
-                <label className="form-label">End Date</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-            </>
-          )}
-          <div className="col-md-2 col-6">
+          <div className="col-3">
             <button
               className="btn btn-success w-100 d-flex align-items-center justify-content-center "
               onClick={exportToExcel}
@@ -494,10 +508,10 @@ const Reports = ({ orders, expenses }) => {
               )}
             </button>
           </div>
-          <div className="col-md-2 col-6">
+          <div className="col-3">
             <button
               className="btn btn-danger w-100 d-flex align-items-center justify-content-center"
-              onClick={exportToPDF}
+              onClick={() => exportToPDF()}
               disabled={loading}
               aria-label="Export report to PDF"
             >
@@ -521,50 +535,27 @@ const Reports = ({ orders, expenses }) => {
       </div>
 
       {/* Summary Cards */}
-      <div className="row mb-4">
-        <div className="col-md-3">
-          <div className="card shadow-sm border-0 bg-light">
-            <div className="card-body text-center">
-              <h5>Total Income</h5>
-              <h3 className="text-success">{formatCurrency(totalIncome)}</h3>
+      <div className="row mt-4">
+        {cards.map((card) => (
+          <div className="col-6 col-md-3 mb-3" key={card.title}>
+            <div
+              className="p-3 text-white rounded shadow-sm"
+              style={{
+                backgroundColor: card.bgColor,
+                minHeight: '140px',
+              }}
+            >
+              <h5>{card.title}</h5>
+              <p className="mb-1 small">{card.description}</p>
+              <h4>{card.value}</h4>
             </div>
           </div>
-        </div>
-        <div className="col-md-3">
-          <div className="card shadow-sm border-0 bg-light">
-            <div className="card-body text-center">
-              <h5>Pending Income</h5>
-              <h3 className="text-warning">{formatCurrency(totalPending)}</h3>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="card shadow-sm border-0 bg-light">
-            <div className="card-body text-center">
-              <h5>Total Expenses</h5>
-              <h3 className="text-danger">{formatCurrency(totalExpenses)}</h3>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div
-            className={`card shadow-sm border-0 ${
-              netProfit >= 0 ? 'bg-light' : 'bg-danger bg-opacity-10'
-            }`}
-          >
-            <div className="card-body text-center">
-              <h5>Net Profit</h5>
-              <h3 className={netProfit >= 0 ? 'text-success' : 'text-danger'}>
-                {formatCurrency(netProfit)}
-              </h3>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Charts */}
       <div className="row mt-4">
-        <div className="col-md-6 col-12 mb-3">
+        <div className="col-md-6 col-10 mb-3">
           <h6>Income vs Pending vs Expenses</h6>
           <div className="p-2 border rounded" style={{ minHeight: '280px' }}>
             <Pie
@@ -574,7 +565,7 @@ const Reports = ({ orders, expenses }) => {
             />
           </div>
         </div>
-        <div className="col-md-6 col-12 mb-3">
+        <div className="col-md-6 col-10 mb-3">
           <h6>Daily Breakdown</h6>
           <div className="p-2 border rounded" style={{ minHeight: '280px' }}>
             <Bar
@@ -592,9 +583,6 @@ const Reports = ({ orders, expenses }) => {
         <table className="table table-bordered table-striped text-center table-hover">
           <thead style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
             <tr>
-              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-                ID
-              </th>
               <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
                 Customer
               </th>
@@ -616,7 +604,6 @@ const Reports = ({ orders, expenses }) => {
             {filteredOrders.length > 0 ? (
               filteredOrders.map((o) => (
                 <tr key={o.id}>
-                  <td>{o.id}</td>
                   <td>{o.customer}</td>
                   <td>{o.service}</td>
                   <td>{formatCurrency(o.price)}</td>
@@ -654,9 +641,6 @@ const Reports = ({ orders, expenses }) => {
           <thead style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
             <tr>
               <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-                ID
-              </th>
-              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
                 Category
               </th>
               <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
@@ -671,7 +655,6 @@ const Reports = ({ orders, expenses }) => {
             {filteredExpenses.length > 0 ? (
               filteredExpenses.map((e) => (
                 <tr key={e.id}>
-                  <td>{e.id}</td>
                   <td>{e.category}</td>
                   <td>{formatCurrency(e.amount)}</td>
                   <td>{new Date(e.date).toLocaleDateString()}</td>

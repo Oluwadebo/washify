@@ -1,17 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useDateFilter from './useDateFilter';
 import FilterControl from './FilterControl';
 
-const Orders = ({ orders, setOrders }) => {
+const Orders = () => {
+  const [orders, setOrders] = useState([]);
   const [customer, setCustomer] = useState('');
   const [service, setService] = useState('Washing');
   const [price, setPrice] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('Pending');
-
-  // 🔹 Edit state
   const [editingOrder, setEditingOrder] = useState(null);
 
-  // 🔹 Use the reusable date filter hook
+  // 🔹 Date filter hook
   const {
     filterType,
     setFilterType,
@@ -28,14 +27,28 @@ const Orders = ({ orders, setOrders }) => {
     filterByDate,
   } = useDateFilter();
 
-  // ✅ Get current logged-in user email
-  const storedUser = JSON.parse(localStorage.getItem('authUser'));
-  const currentUserEmail = storedUser?.email;
+  // 🔹 Get logged-in user email
+  let currentUserEmail = null;
+  try {
+    const storedUser = JSON.parse(localStorage.getItem('authUser'));
+    currentUserEmail = storedUser?.email;
+  } catch {
+    currentUserEmail = null;
+    localStorage.removeItem('authUser');
+  }
 
-  // ✅ Add new order
+  // 🔹 Load user's orders from localStorage
+  useEffect(() => {
+    const allOrders = JSON.parse(localStorage.getItem('orders')) || [];
+    const userOrders = allOrders.filter(
+      (order) => order.userEmail === currentUserEmail
+    );
+    setOrders(userOrders);
+  }, [currentUserEmail]);
+
+  // 🔹 Add new order
   const handleAddOrder = (e) => {
     e.preventDefault();
-
     const newOrder = {
       id: Date.now(),
       customer,
@@ -43,40 +56,59 @@ const Orders = ({ orders, setOrders }) => {
       price: Number(price),
       paymentStatus,
       date: new Date().toISOString(),
-      userEmail: currentUserEmail, // 🔹 attach user email
+      userEmail: currentUserEmail,
     };
 
-    setOrders([newOrder, ...orders]);
+    const allOrders = JSON.parse(localStorage.getItem('orders')) || [];
+    const updatedOrders = [newOrder, ...allOrders];
+    localStorage.setItem('orders', JSON.stringify(updatedOrders));
 
+    const userOrders = updatedOrders.filter(
+      (order) => order.userEmail === currentUserEmail
+    );
+    setOrders(userOrders);
+
+    // Reset form
     setCustomer('');
     setPrice('');
     setPaymentStatus('Pending');
   };
 
-  // ✅ Save edited order
+  // 🔹 Save edited order
   const handleSaveEdit = () => {
-    const updatedOrders = orders.map((order) =>
+    const allOrders = JSON.parse(localStorage.getItem('orders')) || [];
+    const updatedAll = allOrders.map((order) =>
       order.id === editingOrder.id ? editingOrder : order
     );
-    setOrders(updatedOrders);
+    localStorage.setItem('orders', JSON.stringify(updatedAll));
+
+    const userOrders = updatedAll.filter(
+      (order) => order.userEmail === currentUserEmail
+    );
+    setOrders(userOrders);
     setEditingOrder(null);
   };
 
-  // ✅ Delete order
+  // 🔹 Delete order
   const deleteOrder = (id) => {
-    setOrders(orders.filter((order) => order.id !== id));
+    const allOrders = JSON.parse(localStorage.getItem('orders')) || [];
+    const updatedAll = allOrders.filter((order) => order.id !== id);
+    localStorage.setItem('orders', JSON.stringify(updatedAll));
+
+    const userOrders = updatedAll.filter(
+      (order) => order.userEmail === currentUserEmail
+    );
+    setOrders(userOrders);
   };
 
-  // ✅ Apply date filtering AND user filtering
-  const filteredOrders = orders.filter(
-    (order) => order.userEmail === currentUserEmail && filterByDate(order.date)
-  );
+  // 🔹 Filter by date (user filter already done)
+  const filteredOrders = orders.filter((order) => filterByDate(order.date));
 
   return (
     <div>
       <h2 style={{ color: '#2C3E50' }}>Orders</h2>
 
-      {/* 🔹 Reusable Filter Section */}
+      {/* 🔹 Filter Section */}
       <div className="card p-3 mb-4 shadow-sm">
         <FilterControl
           filterType={filterType}
@@ -96,7 +128,7 @@ const Orders = ({ orders, setOrders }) => {
 
       {/* 🔹 Add Order Form */}
       <form onSubmit={handleAddOrder} className="row g-3 mb-4">
-        <div className="col-md-3">
+        <div className="col-6 col-md-3">
           <input
             type="text"
             className="form-control"
@@ -106,8 +138,7 @@ const Orders = ({ orders, setOrders }) => {
             required
           />
         </div>
-
-        <div className="col-md-3">
+        <div className="col-6 col-md-3">
           <select
             className="form-select"
             value={service}
@@ -118,8 +149,7 @@ const Orders = ({ orders, setOrders }) => {
             <option value="Dry Cleaning">Dry Cleaning</option>
           </select>
         </div>
-
-        <div className="col-md-2">
+        <div className="col-6 col-md-2">
           <input
             type="number"
             className="form-control"
@@ -129,8 +159,7 @@ const Orders = ({ orders, setOrders }) => {
             required
           />
         </div>
-
-        <div className="col-md-2">
+        <div className="col-6 col-md-2">
           <select
             className="form-select"
             value={paymentStatus}
@@ -140,9 +169,8 @@ const Orders = ({ orders, setOrders }) => {
             <option value="Pending">Pending</option>
           </select>
         </div>
-
         <div className="col-md-2">
-          <button type="submit" className="btn btn-primary w-100">
+          <button type="submit" className="btn w-100" style={{ backgroundColor: '#2C3E50', color: '#ECF0F1'}}>
             Add Order
           </button>
         </div>
@@ -153,54 +181,70 @@ const Orders = ({ orders, setOrders }) => {
       <table className="table table-bordered table-striped table-hover shadow-sm text-center table-responsive">
         <thead>
           <tr>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>ID</th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Customer</th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Service</th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Price</th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Status</th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Actions</th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+              Customer
+            </th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+              Service
+            </th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+              Price
+            </th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+              Status
+            </th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody>
-          {filteredOrders.map((order) => (
-            <tr
-              key={order.id}
-              style={{
-                backgroundColor:
-                  order.paymentStatus === 'Paid' ? '#E8F8F5' : '#FEF9E7',
-              }}
-            >
-              <td>{order.id}</td>
-              <td>{order.customer}</td>
-              <td>{order.service}</td>
-              <td>₦{order.price}</td>
-              <td>
-                {order.paymentStatus === 'Paid' ? (
-                  <span className="badge bg-success">
-                    <i className="bi bi-check-circle me-1"></i> Paid
-                  </span>
-                ) : (
-                  <span className="badge bg-warning text-dark">
-                    <i className="bi bi-hourglass-split me-1"></i> Pending
-                  </span>
-                )}
-              </td>
-              <td>
-                <button
-                  className="btn btn-sm btn-info me-2"
-                  onClick={() => setEditingOrder(order)}
-                >
-                  <i className="bi bi-pencil-square"></i> Edit
-                </button>
-                <button
-                  className="btn btn-sm btn-danger"
-                  onClick={() => deleteOrder(order.id)}
-                >
-                  <i className="bi bi-trash"></i> Delete
-                </button>
+          {filteredOrders.length > 0 ? (
+            filteredOrders.map((order) => (
+              <tr
+                key={order.id}
+                style={{
+                  backgroundColor:
+                    order.paymentStatus === 'Paid' ? '#E8F8F5' : '#FEF9E7',
+                }}
+              >
+                <td>{order.customer}</td>
+                <td>{order.service}</td>
+                <td>₦{order.price.toLocaleString()}</td>
+                <td>
+                  {order.paymentStatus === 'Paid' ? (
+                    <span className="badge bg-success">
+                      <i className="bi bi-check-circle me-1"></i> Paid
+                    </span>
+                  ) : (
+                    <span className="badge bg-warning text-dark">
+                      <i className="bi bi-hourglass-split me-1"></i> Pending
+                    </span>
+                  )}
+                </td>
+                <td>
+                  <button
+                    className="btn btn-sm btn-info me-2"
+                    onClick={() => setEditingOrder(order)}
+                  >
+                    <i className="bi bi-pencil-square"></i> Edit
+                  </button>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => deleteOrder(order.id)}
+                  >
+                    <i className="bi bi-trash"></i> Delete
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="6" className="text-muted">
+                No orders found.
               </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
 
