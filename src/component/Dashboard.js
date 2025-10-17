@@ -153,9 +153,9 @@ const Dashboard = () => {
       {/* ✅ Dashboard Cards */}
       <div className="row mt-4 text-center">
         {cards.map((card) => (
-          <div className="col-6 col-md-3 mb-3" key={card.title}>
+          <div className="col-12 col-md-3 mb-3" key={card.title}>
             <div
-              className="p-3 text-white rounded shadow-sm"
+              className="dashboard-card p-3 text-white rounded shadow-sm"
               style={{
                 backgroundColor: card.bgColor,
                 minHeight: '140px',

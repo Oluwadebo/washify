@@ -64,6 +64,8 @@ const Reports = () => {
   }
 
   const shopName = storedUser?.shopName || 'Shop Admin';
+  const tell = storedUser?.tell || 'Shop Phone number';
+  const address = storedUser?.address || 'Shop adress';
   const logo = storedUser?.logo || '/favicon.png';
   const admin = storedUser?.LastName || 'Admin';
 
@@ -319,10 +321,10 @@ const Reports = () => {
     doc.setFontSize(18).setFont('helvetica', 'bold');
     doc.text(shopName.toUpperCase().substring(0, 30), 60, 25);
     doc.setFontSize(10).setFont('helvetica', 'normal');
-    doc.text('40, Jomowoye Street, Irele, Ondo State', 196, 21, {
+    doc.text(address, 196, 21, {
       align: 'right',
     });
-    doc.text('Tel: 09044796430', 196, 27, { align: 'right' });
+    doc.text(tell, 196, 27, { align: 'right' });
     doc.line(14, 32, 196, 32);
 
     doc.setFontSize(13).setFont('helvetica', 'bold');
@@ -540,7 +542,7 @@ const Reports = () => {
             <button
               className="btn btn-success w-100 d-flex align-items-center justify-content-center "
               onClick={exportToExcel}
-              disabled={loading}
+               disabled={loading || (filteredOrders.length === 0 && filteredExpenses.length === 0)}
               aria-label="Export report to Excel"
             >
               {loading ? (
@@ -563,7 +565,7 @@ const Reports = () => {
             <button
               className="btn btn-danger w-100 d-flex align-items-center justify-content-center"
               onClick={() => exportToPDF()}
-              disabled={loading}
+               disabled={loading || (filteredOrders.length === 0 && filteredExpenses.length === 0)}
               aria-label="Export report to PDF"
             >
               {loading ? (

@@ -43,8 +43,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     >
       {/* ✅ Top Section - Brand (Dynamic) */}
       <div>
-        <h2 className="text-center">ADMIN</h2>
-        <div className="text-center mb-3">
+        {/* <h2 className="text-center">ADMIN</h2> */}
+        <div className="text-center mb-3 d-none d-md-block">
           <img
             src={logo}
             alt="Shop Logo"

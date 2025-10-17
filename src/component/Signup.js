@@ -10,6 +10,8 @@ const Signup = () => {
     FirstName: '',
     LastName: '',
     shopName: '',
+    tell: '',
+    address: '',
     email: '',
     password: '',
     logo: null,
@@ -61,6 +63,8 @@ const Signup = () => {
 
     if (
       !form.FirstName ||
+      !form.tell ||
+      !form.address ||
       !form.LastName ||
       !form.shopName ||
       !form.email ||
@@ -152,6 +156,32 @@ const Signup = () => {
               value={form.shopName}
               onChange={handleChange}
               placeholder="Enter your shop name"
+              required
+              disabled={loading}
+            />
+          </div>
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Shop address</label>
+            <input
+              type="text"
+              className="form-control"
+              name="address"
+              value={form.address}
+              onChange={handleChange}
+              placeholder="Enter your shop address"
+              required
+              disabled={loading}
+            />
+          </div>
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Shop Phone number</label>
+            <input
+              type="tel"
+              className="form-control"
+              name="tell"
+              value={form.tell}
+              onChange={handleChange}
+              placeholder="Enter your shop Phone number"
               required
               disabled={loading}
             />
