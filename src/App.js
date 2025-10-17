@@ -70,7 +70,7 @@ function App() {
               <div className="container-fluid">
                 {/* Sidebar Toggle */}
                 <button
-                  className="btn btn-outline-light d-md-none me-2"
+                  className="btn btn-outline-light d-md-none"
                   onClick={toggleSidebar}
                   aria-label="Toggle sidebar"
                   style={{
@@ -108,7 +108,7 @@ function App() {
                 <div className="d-flex align-items-center">
 
                   {/* User Dropdown */}
-                  <div className="dropdown d-inline d-md-none">
+                  <div className="dropdown d-md-none">
                     <button
                       className="btn btn-outline-light dropdown-toggle d-flex align-items-center"
                       type="button"
@@ -161,7 +161,7 @@ function App() {
                     </ul>
                   </div>
                   <button
-                    className="btn btn-sm btn-outline-light me-3 position-relative"
+                    className="btn btn-sm btn-outline-light me-3 position-relative d-none d-md-inline"
                     style={{ borderRadius: '50%' }}
                   >
                     <i className="bi bi-bell fs-5"></i>
