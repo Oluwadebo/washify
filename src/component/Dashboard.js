@@ -1,10 +1,39 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import useDateFilter from './useDateFilter';
 import FilterControl from './FilterControl';
+import { formatCurrency } from './formatCurrency';
+import { ORDERS,EXPENSES } from './endpoint';
+
 
 const Dashboard = () => {
   const [orders, setOrders] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const [ordersRes, expensesRes] = await Promise.all([
+        axios.get(`${ORDERS}`, { withCredentials: true }),
+        axios.get(`${EXPENSES}`, { withCredentials: true }),
+      ]);
+
+      console.log('Orders response:', ordersRes.data);
+      console.log('Expenses response:', expensesRes.data);
+
+      setOrders(ordersRes.data);
+      setExpenses(expensesRes.data);
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, []);
+
 
   const {
     filterType,
@@ -22,109 +51,63 @@ const Dashboard = () => {
     filterByDate,
   } = useDateFilter();
 
-  // ✅ Get logged-in user email
-  let currentUserEmail = null;
-  try {
-    const storedUser = JSON.parse(localStorage.getItem('authUser'));
-    currentUserEmail = storedUser?.email;
-  } catch {
-    currentUserEmail = null;
-    localStorage.removeItem('authUser');
-  }
-
-  // ✅ Load user's orders & expenses from localStorage
+  // ✅ Fetch user's orders and expenses from backend
   useEffect(() => {
-    if (currentUserEmail) {
-      const savedOrders = JSON.parse(localStorage.getItem(`orders`)) || [];
-      const savedExpenses = JSON.parse(localStorage.getItem(`expenses`)) || [];
+    const fetchData = async () => {
+      try {
+        const [ordersRes, expensesRes] = await Promise.all([
+          axios.get(`${ORDERS}`, { withCredentials: true }),
+          axios.get(`${EXPENSES}`, { withCredentials: true }),
+        ]);
+        setOrders(ordersRes.data);
+        setExpenses(expensesRes.data);
+      } catch (error) {
+        console.error('❌ Failed to load dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      setOrders(savedOrders);
-      setExpenses(savedExpenses);
-    }
-  }, [currentUserEmail]);
+    fetchData();
+  }, []);
 
-  // ✅ Filtered data for logged-in user
-  const filteredOrders = orders.filter(
-    (o) => o.userEmail === currentUserEmail && filterByDate(o.date)
-  );
-  const filteredExpenses = expenses.filter(
-    (e) => e.userEmail === currentUserEmail && filterByDate(e.date)
-  );
+  // ✅ Filtered data (by date only — user already filtered on backend)
+  const filteredOrders = orders.filter((o) => filterByDate(o.date));
+  const filteredExpenses = expenses.filter((e) => filterByDate(e.date));
 
   // ✅ Dashboard Calculations
   const totalOrders = filteredOrders.length;
-  const totalIncome = filteredOrders.reduce(
-    (acc, o) => acc + Number(o.price || 0),
-    0
-  );
-  const totalExpenses = filteredExpenses.reduce(
-    (acc, e) => acc + Number(e.amount || 0),
-    0
-  );
+  const totalIncome = filteredOrders.reduce((acc, o) => acc + Number(o.price || 0), 0);
+  const totalExpenses = filteredExpenses.reduce((acc, e) => acc + Number(e.amount || 0), 0);
   const netProfit = totalIncome - totalExpenses;
   const totalPaid = filteredOrders
     .filter((o) => o.paymentStatus === 'Paid')
     .reduce((acc, o) => acc + Number(o.price || 0), 0);
-  const totalBalance =
-    filteredOrders
-      .filter((o) => o.paymentStatus === 'Paid')
-      .reduce((acc, o) => acc + Number(o.price || 0), 0) - totalExpenses;
-
+  const totalBalance = totalPaid - totalExpenses;
   const totalPending = filteredOrders
     .filter((o) => o.paymentStatus === 'Pending')
     .reduce((acc, o) => acc + Number(o.price || 0), 0);
 
-  // ✅ Currency formatter
-  const formatCurrency = (amount) =>
-    new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-    }).format(amount);
 
   // ✅ Dashboard Cards
   const cards = [
-    {
-      title: 'Total Orders',
-      value: totalOrders,
-      bgColor: '#3498DB',
-      description: 'Number of orders recieved',
-    },
-    {
-      title: 'Total Income',
-      value: formatCurrency(totalIncome),
-      bgColor: '#1ABC9C',
-      description: 'Revenue from all orders',
-    },
-    {
-      title: 'Total Expenses',
-      value: formatCurrency(totalExpenses),
-      bgColor: '#E74C3C',
-      description: 'Business running costs',
-    },
-    {
-      title: 'Net Profit',
-      value: formatCurrency(netProfit),
-      bgColor:  netProfit >= 0 ? '#1ABC9C' : '#863a32ff',
-      description: 'Income - Expenses',
-    },
-    {
-      title: 'Total Balance',
-      value: formatCurrency(totalBalance),
-      bgColor: totalBalance >= 0 ? '#9B59B6' : '#863a32ff',
-      description: 'Paid orders - expenses',
-    },
-    {
-      title: 'Total Paid',
-      value: formatCurrency(totalPaid),
-      bgColor: '#1f7967ff',
-      description: 'Completed orders',
-    },{
-      title: 'Total Pending',
-      value: formatCurrency(totalPending),
-      bgColor: '#F39C12',
-      description: 'Pending orders',
-    },
+    { title: 'Total Orders', value: totalOrders, bgColor: '#3498DB', description: 'Number of orders received' },
+    { title: 'Total Income', value: formatCurrency(totalIncome), bgColor: '#1ABC9C', description: 'Revenue from all orders' },
+    { title: 'Total Expenses', value: formatCurrency(totalExpenses), bgColor: '#E74C3C', description: 'Business running costs' },
+    { title: 'Net Profit', value: formatCurrency(netProfit), bgColor: netProfit >= 0 ? '#1ABC9C' : '#863a32ff', description: 'Income - Expenses' },
+    { title: 'Total Balance', value: formatCurrency(totalBalance), bgColor: totalBalance >= 0 ? '#9B59B6' : '#863a32ff', description: 'Paid orders - expenses' },
+    { title: 'Total Paid', value: formatCurrency(totalPaid), bgColor: '#1f7967ff', description: 'Completed orders' },
+    { title: 'Total Pending', value: formatCurrency(totalPending), bgColor: '#F39C12', description: 'Pending orders' },
   ];
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <div className="spinner-border text-primary" role="status"></div>
+        <p className="mt-3">Loading Dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div>

@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import useDateFilter from './useDateFilter';
 import FilterControl from './FilterControl';
+import { EXPENSES, } from './endpoint';
 
-const Expenses = () => {
+
+const Expenses = ({ user }) => {
   const [expenses, setExpenses] = useState([]);
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Rent');
   const [customCategory, setCustomCategory] = useState('');
 
-  // 🔹 Reusable date filter hook
+  // Date filter hook
   const {
     filterType,
     setFilterType,
@@ -25,61 +28,64 @@ const Expenses = () => {
     filterByDate,
   } = useDateFilter();
 
-  // 🔹 Get logged-in user
-  let currentUserEmail = null;
-  try {
-    const storedUser = JSON.parse(localStorage.getItem('authUser'));
-    currentUserEmail = storedUser?.email;
-  } catch {
-    currentUserEmail = null;
-    localStorage.removeItem('authUser');
-  }
-  // 🔹 Load all expenses from localStorage
-  useEffect(() => {
-    const allExpenses = JSON.parse(localStorage.getItem('expenses')) || [];
-    const userExpenses = allExpenses.filter(
-      (exp) => exp.userEmail === currentUserEmail
-    );
-    setExpenses(userExpenses);
-  }, [currentUserEmail]);
+  const API_URL = EXPENSES;
 
-  // 🔹 Add new expense
-  const handleAddExpense = (e) => {
-    e.preventDefault();
-
-    const newExpense = {
-      id: Date.now(),
-      amount: Number(amount),
-      category: category === 'Other' ? customCategory : category,
-      date: new Date().toISOString(),
-      userEmail: currentUserEmail,
-    };
-
-    // 🔹 Update both local state and localStorage
-    const allExpenses = JSON.parse(localStorage.getItem('expenses')) || [];
-    const updatedExpenses = [newExpense, ...allExpenses];
-    localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
-
-    // 🔹 Filter user-specific
-    const userExpenses = updatedExpenses.filter(
-      (exp) => exp.userEmail === currentUserEmail
-    );
-    setExpenses(userExpenses);
-
-    // 🔹 Reset form
-    setAmount('');
-    setCategory('Rent');
-    setCustomCategory('');
+  // Load expenses from backend
+  const fetchExpenses = async () => {
+    // try {
+    //   const res = await axios.get(API_URL, {
+    //     headers: { Authorization: `Bearer ${token}` },
+    //   });
+    //   setExpenses(res.data);
+    // } catch (err) {
+    //   console.error('Failed to fetch expenses:', err);
+    // }
+    try {
+          // setLoading(true);
+          // const  userId= user.id;
+          const response = await axios.get(`${API_URL}?userId=${user.id}`);
+          setExpenses(response.data);
+        } catch (error) {
+          console.error('Failed to fetch orders:', error);
+        } finally {
+          // setLoading(false);
+        }
   };
 
-  // 🔹 Apply date filtering
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
+
+  // Add new expense
+  const handleAddExpense = async (e) => {
+    e.preventDefault();
+    try {
+      const newExpense = {
+        amount: Number(amount),
+        category: category === 'Other' ? customCategory : category,
+        date: new Date().toISOString(),userId: user.id,
+      };
+      const res = await axios.post(API_URL, newExpense);
+      // const res = await axios.post(API_URL, newExpense, {
+      //   headers: { Authorization: `Bearer ${token}` },
+      // });
+      setExpenses([res.data, ...expenses]);
+
+      // Reset form
+      setAmount('');
+      setCategory('Rent');
+      setCustomCategory('');
+    } catch (err) {
+      console.error('Failed to add expense:', err);
+    }
+  };
+
   const filteredExpenses = expenses.filter((exp) => filterByDate(exp.date));
 
   return (
     <div>
       <h2 style={{ color: '#2C3E50' }}>Expenses</h2>
 
-      {/* 🔹 Filter Section */}
       <div className="card p-3 mb-4 shadow-sm">
         <FilterControl
           filterType={filterType}
@@ -97,7 +103,6 @@ const Expenses = () => {
         />
       </div>
 
-      {/* 🔹 Add Expense Form */}
       <form onSubmit={handleAddExpense} className="row g-3 mb-4">
         <div className="col-6 col-md-3">
           <select
@@ -137,32 +142,23 @@ const Expenses = () => {
         </div>
 
         <div className="col-md-1">
-          <button type="submit" className="btn btn-primary w-100">
-            Add
-          </button>
+          <button type="submit" className="btn btn-primary w-100">Add</button>
         </div>
       </form>
 
-      {/* 🔹 Expenses Table */}
       <h5>Expenses List</h5>
       <table className="table table-bordered table-striped table-hover shadow-sm text-center table-responsive">
         <thead>
           <tr>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Amount
-            </th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Category
-            </th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Date
-            </th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Amount</th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Category</th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Date</th>
           </tr>
         </thead>
         <tbody>
           {filteredExpenses.length > 0 ? (
             filteredExpenses.map((exp) => (
-              <tr key={exp.id}>
+              <tr key={exp._id}>
                 <td>₦{exp.amount.toLocaleString()}</td>
                 <td>{exp.category}</td>
                 <td>{new Date(exp.date).toLocaleDateString()}</td>
@@ -170,9 +166,7 @@ const Expenses = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="4" className="text-muted">
-                No expenses found.
-              </td>
+              <td colSpan="4" className="text-muted">No expenses found.</td>
             </tr>
           )}
         </tbody>

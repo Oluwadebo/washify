@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import useDateFilter from './useDateFilter';
 import FilterControl from './FilterControl';
+import { ORDERS } from './endpoint';
 
-const Orders = () => {
+const Orders = ({ user }) => {
   const [orders, setOrders] = useState([]);
   const [customer, setCustomer] = useState('');
   const [service, setService] = useState('Washing');
   const [price, setPrice] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('Pending');
   const [editingOrder, setEditingOrder] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // 🔹 Date filter hook
   const {
@@ -27,81 +30,83 @@ const Orders = () => {
     filterByDate,
   } = useDateFilter();
 
-  // 🔹 Get logged-in user email
-  let currentUserEmail = null;
-  try {
-    const storedUser = JSON.parse(localStorage.getItem('authUser'));
-    currentUserEmail = storedUser?.email;
-  } catch {
-    currentUserEmail = null;
-    localStorage.removeItem('authUser');
-  }
+  // 🔹 Backend base URL
+  const API_URL = ORDERS; // replace with your backend endpoint
 
-  // 🔹 Load user's orders from localStorage
+  // 🔹 Load orders from backend
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      // const  userId= user.id;
+      const response = await axios.get(`${API_URL}?userId=${user.id}`);
+      console.log(response.data)
+      setOrders(response.data);
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const allOrders = JSON.parse(localStorage.getItem('orders')) || [];
-    const userOrders = allOrders.filter(
-      (order) => order.userEmail === currentUserEmail
-    );
-    setOrders(userOrders);
-  }, [currentUserEmail]);
+    fetchOrders();
+  }, []);
 
   // 🔹 Add new order
-  const handleAddOrder = (e) => {
+  const handleAddOrder = async (e) => {
     e.preventDefault();
-    const newOrder = {
-      id: Date.now(),
-      customer,
-      service,
-      price: Number(price),
-      paymentStatus,
-      date: new Date().toISOString(),
-      userEmail: currentUserEmail,
-    };
+    try {
+      const newOrder = {
+        customer,
+        service,
+        price: Number(price),
+        paymentStatus,
+        date: new Date().toISOString(),
+        userId: user.id,
+      };
 
-    const allOrders = JSON.parse(localStorage.getItem('orders')) || [];
-    const updatedOrders = [newOrder, ...allOrders];
-    localStorage.setItem('orders', JSON.stringify(updatedOrders));
+      const response = await axios.post(API_URL, newOrder);
+      console.log(response);
+      setOrders([response.data, ...orders]);
 
-    const userOrders = updatedOrders.filter(
-      (order) => order.userEmail === currentUserEmail
-    );
-    setOrders(userOrders);
-
-    // Reset form
-    setCustomer('');
-    setPrice('');
-    setPaymentStatus('Pending');
+      // Reset form
+      setCustomer('');
+      setPrice('');
+      setPaymentStatus('Pending');
+    } catch (error) {
+      console.error('Failed to add order:', error);
+    }
   };
 
   // 🔹 Save edited order
-  const handleSaveEdit = () => {
-    const allOrders = JSON.parse(localStorage.getItem('orders')) || [];
-    const updatedAll = allOrders.map((order) =>
-      order.id === editingOrder.id ? editingOrder : order
-    );
-    localStorage.setItem('orders', JSON.stringify(updatedAll));
-
-    const userOrders = updatedAll.filter(
-      (order) => order.userEmail === currentUserEmail
-    );
-    setOrders(userOrders);
-    setEditingOrder(null);
+  const handleSaveEdit = async () => {
+    try {
+      const response = await axios.put(
+        `${API_URL}/${editingOrder.id}`,
+        editingOrder
+      );
+      setOrders(
+        orders.map((order) =>
+          order.id === response.data.id ? response.data : order
+        )
+      );
+      setEditingOrder(null);
+    } catch (error) {
+      console.error('Failed to update order:', error);
+    }
   };
 
   // 🔹 Delete order
-  const deleteOrder = (id) => {
-    const allOrders = JSON.parse(localStorage.getItem('orders')) || [];
-    const updatedAll = allOrders.filter((order) => order.id !== id);
-    localStorage.setItem('orders', JSON.stringify(updatedAll));
-
-    const userOrders = updatedAll.filter(
-      (order) => order.userEmail === currentUserEmail
-    );
-    setOrders(userOrders);
+  const deleteOrder = async (id) => {
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+      setOrders(orders.filter((order) => order.id !== id));
+    } catch (error) {
+      console.error('Failed to delete order:', error);
+    }
   };
 
-  // 🔹 Filter by date (user filter already done)
+  // 🔹 Filtered orders
   const filteredOrders = orders.filter((order) => filterByDate(order.date));
 
   return (
@@ -170,7 +175,11 @@ const Orders = () => {
           </select>
         </div>
         <div className="col-md-2">
-          <button type="submit" className="btn w-100" style={{ backgroundColor: '#2C3E50', color: '#ECF0F1'}}>
+          <button
+            type="submit"
+            className="btn w-100"
+            style={{ backgroundColor: '#2C3E50', color: '#ECF0F1' }}
+          >
             Add Order
           </button>
         </div>
@@ -178,75 +187,79 @@ const Orders = () => {
 
       {/* 🔹 Orders Table */}
       <h5>Orders List</h5>
-      <table className="table table-bordered table-striped table-hover shadow-sm text-center table-responsive">
-        <thead>
-          <tr>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Customer
-            </th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Service
-            </th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Price
-            </th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Status
-            </th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredOrders.length > 0 ? (
-            filteredOrders.map((order) => (
-              <tr
-                key={order.id}
-                style={{
-                  backgroundColor:
-                    order.paymentStatus === 'Paid' ? '#E8F8F5' : '#FEF9E7',
-                }}
-              >
-                <td>{order.customer}</td>
-                <td>{order.service}</td>
-                <td>₦{order.price.toLocaleString()}</td>
-                <td>
-                  {order.paymentStatus === 'Paid' ? (
-                    <span className="badge bg-success">
-                      <i className="bi bi-check-circle me-1"></i> Paid
-                    </span>
-                  ) : (
-                    <span className="badge bg-warning text-dark">
-                      <i className="bi bi-hourglass-split me-1"></i> Pending
-                    </span>
-                  )}
-                </td>
-                <td>
-                  <button
-                    className="btn btn-sm btn-info me-2"
-                    onClick={() => setEditingOrder(order)}
-                  >
-                    <i className="bi bi-pencil-square"></i> Edit
-                  </button>
-                  <button
-                    className="btn btn-sm btn-danger"
-                    onClick={() => deleteOrder(order.id)}
-                  >
-                    <i className="bi bi-trash"></i> Delete
-                  </button>
+      {loading ? (
+        <p>Loading orders...</p>
+      ) : (
+        <table className="table table-bordered table-striped table-hover shadow-sm text-center table-responsive">
+          <thead>
+            <tr>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                Customer
+              </th>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                Service
+              </th>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                Price
+              </th>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                Status
+              </th>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredOrders.length > 0 ? (
+              filteredOrders.map((order) => (
+                <tr
+                  key={order.id}
+                  style={{
+                    backgroundColor:
+                      order.paymentStatus === 'Paid' ? '#E8F8F5' : '#FEF9E7',
+                  }}
+                >
+                  <td>{order.customer}</td>
+                  <td>{order.service}</td>
+                  <td>₦{order.price.toLocaleString()}</td>
+                  <td>
+                    {order.paymentStatus === 'Paid' ? (
+                      <span className="badge bg-success">
+                        <i className="bi bi-check-circle me-1"></i> Paid
+                      </span>
+                    ) : (
+                      <span className="badge bg-warning text-dark">
+                        <i className="bi bi-hourglass-split me-1"></i> Pending
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    <button
+                      className="btn btn-sm btn-info me-2"
+                      onClick={() => setEditingOrder(order)}
+                    >
+                      <i className="bi bi-pencil-square"></i> Edit
+                    </button>
+                    <button
+                      className="btn btn-sm btn-danger"
+                      onClick={() => deleteOrder(order.id)}
+                    >
+                      <i className="bi bi-trash"></i> Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="6" className="text-muted">
+                  No orders found.
                 </td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="6" className="text-muted">
-                No orders found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      )}
 
       {/* 🔹 Edit Modal */}
       {editingOrder && (

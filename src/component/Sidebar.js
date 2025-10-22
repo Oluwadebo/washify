@@ -1,18 +1,10 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import UserAvatar from './UserAvatar';
 
-const Sidebar = ({ isOpen, toggleSidebar }) => {
+const Sidebar = ({ isOpen, toggleSidebar, user }) => {
   const navigate = useNavigate();
-
-  // ✅ Get user info from localStorage
-  let storedUser = null;
-  try {
-    storedUser = JSON.parse(localStorage.getItem('authUser'));
-  } catch (err) {
-    localStorage.removeItem('authUser'); // clear corrupted data
-  }
-  const shopName = storedUser?.shopName || 'Laundry Shop';
-  const logo = storedUser?.logo || '/favicon.png';
 
   const navLinks = [
     { name: 'Dashboard', path: '/', icon: 'bi-speedometer2' },
@@ -22,9 +14,18 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   ];
 
   // ✅ Handle logout
-  const handleLogout = () => {
-    localStorage.removeItem('authUser');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        'http://localhost:5000/api/users/logout',
+        {},
+        { withCredentials: true } // ✅ Correct placement for cookie-based logout
+      );
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      navigate('/login');
+    }
   };
 
   return (
@@ -45,28 +46,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       <div>
         {/* <h2 className="text-center">ADMIN</h2> */}
         <div className="text-center mb-3 d-none d-md-block">
-          <img
-            src={logo}
-            alt="Shop Logo"
-            onError={(e) => (e.target.src = '/favicon.png')}
-            style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '50%',
-              objectFit: 'cover',
-              border: '2px solid #1ABC9C',
-            }}
-          />
-          <h5
-            className="mt-3 text-uppercase"
-            style={{
-              color: '#1ABC9C',
-              fontWeight: '600',
-              letterSpacing: '1px',
-            }}
-          >
-            {shopName}
-          </h5>
+          <UserAvatar user={user} />
         </div>
 
         {/* ✅ Navigation Links */}

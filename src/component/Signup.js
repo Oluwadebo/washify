@@ -61,15 +61,7 @@ const Signup = () => {
     e.preventDefault();
     setError('');
 
-    if (
-      !form.FirstName ||
-      !form.tell ||
-      !form.address ||
-      !form.LastName ||
-      !form.shopName ||
-      !form.email ||
-      !form.password
-    ) {
+    if (Object.values(form).some((v) => v === '' || v === null)) {
       setError('All fields are required!');
       return;
     }
@@ -95,6 +87,44 @@ const Signup = () => {
       setLoading(false);
     }
   };
+  const Inputfield = [
+    {
+      label: 'First Name',
+      name: 'FirstName',
+      type: 'text',
+      placeholder: 'Enter your first name',
+    },
+    {
+      label: 'Last Name',
+      name: 'LastName',
+      type: 'text',
+      placeholder: 'Enter your last name',
+    },
+    {
+      label: 'Shop Name',
+      name: 'shopName',
+      type: 'text',
+      placeholder: 'Enter your shop name',
+    },
+    {
+      label: 'Shop Address',
+      name: 'address',
+      type: 'text',
+      placeholder: 'Enter your shop address',
+    },
+    {
+      label: 'Shop Phone Number',
+      name: 'tell',
+      type: 'tel',
+      placeholder: 'Enter your shop phone number',
+    },
+    {
+      label: 'Email',
+      name: 'email',
+      type: 'email',
+      placeholder: 'Enter your email',
+    },
+  ];
 
   return (
     <div
@@ -121,155 +151,107 @@ const Signup = () => {
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label className="form-label fw-semibold">First Name</label>
-            <input
-              type="text"
-              className="form-control"
-              name="FirstName"
-              value={form.FirstName}
-              onChange={handleChange}
-              placeholder="Enter your first name"
-              required
-              disabled={loading}
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label fw-semibold">Last Name</label>
-            <input
-              type="text"
-              className="form-control"
-              name="LastName"
-              value={form.LastName}
-              onChange={handleChange}
-              placeholder="Enter your last name"
-              required
-              disabled={loading}
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label fw-semibold">Shop Name</label>
-            <input
-              type="text"
-              className="form-control"
-              name="shopName"
-              value={form.shopName}
-              onChange={handleChange}
-              placeholder="Enter your shop name"
-              required
-              disabled={loading}
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label fw-semibold">Shop address</label>
-            <input
-              type="text"
-              className="form-control"
-              name="address"
-              value={form.address}
-              onChange={handleChange}
-              placeholder="Enter your shop address"
-              required
-              disabled={loading}
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label fw-semibold">Shop Phone number</label>
-            <input
-              type="tel"
-              className="form-control"
-              name="tell"
-              value={form.tell}
-              onChange={handleChange}
-              placeholder="Enter your shop Phone number"
-              required
-              disabled={loading}
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label fw-semibold">Email</label>
-            <input
-              type="email"
-              className={`form-control ${
-                emailStatus === 'exists'
-                  ? 'is-invalid'
-                  : emailStatus === 'unavailable'
-                  ? 'is-valid'
-                  : ''
-              }`}
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              required
-              disabled={loading}
-            />
-            {emailStatus === 'checking' && (
-              <div className="form-text text-secondary">
-                Checking email availability...
-              </div>
-            )}
-            {emailStatus === 'exists' && (
-              <div className="invalid-feedback">
-                This email is already registered.
-              </div>
-            )}
-            {emailStatus === 'unavailable' && (
-              <div className="valid-feedback">Email is unused ✅</div>
-            )}
-          </div>
-          <div className="mb-3 position-relative">
-            <label className="form-label fw-semibold">Password</label>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              className="form-control"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-              required
-              disabled={loading}
-            />
-            <i
-              className={`bi ${
-                showPassword ? 'bi-eye-slash' : 'bi-eye'
-              } position-absolute`}
-              style={{
-                right: '15px',
-                top: '40px',
-                cursor: 'pointer',
-                color: '#2C3E50',
-              }}
-              onClick={() => setShowPassword(!showPassword)}
-            ></i>
-          </div>
-          <div className="mb-3">
-            <label className="form-label fw-semibold">Upload Logo</label>
-            <input
-              type="file"
-              className="form-control"
-              name="logo"
-              accept="image/*"
-              onChange={handleChange}
-              disabled={loading}
-            />
-            {preview && (
-              <div className="text-center mt-3">
-                <img
-                  src={preview}
-                  alt="Logo Preview"
-                  style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '2px solid #2C3E50',
-                  }}
+          {/* Dynamic Fields */}
+          <div className="row">
+            {Inputfield.map((field) => (
+              <div className="mb-3 col-12" key={field.name}>
+                <label className="form-label fw-semibold">{field.label}</label>
+                <input
+                  type={field.type}
+                  className={`form-control ${
+                    field.name === 'email'
+                      ? emailStatus === 'exists'
+                        ? 'is-invalid'
+                        : emailStatus === 'unavailable'
+                        ? 'is-valid'
+                        : ''
+                      : ''
+                  }`}
+                  name={field.name}
+                  value={form[field.name]}
+                  onChange={handleChange}
+                  placeholder={field.placeholder}
+                  required
+                  disabled={loading}
                 />
-                <p className="small text-muted mt-1">Logo Preview</p>
+
+                {/* Email feedback */}
+                {field.name === 'email' && (
+                  <>
+                    {emailStatus === 'checking' && (
+                      <div className="form-text text-secondary">
+                        Checking email availability...
+                      </div>
+                    )}
+                    {emailStatus === 'exists' && (
+                      <div className="invalid-feedback">
+                        This email is already registered.
+                      </div>
+                    )}
+                    {emailStatus === 'unavailable' && (
+                      <div className="valid-feedback">Email is unused ✅</div>
+                    )}
+                  </>
+                )}
               </div>
-            )}
+            ))}
+            {/* Password Field */}
+            <div className="mb-3 position-relative col-12">
+              <label className="form-label fw-semibold">Password</label>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className="form-control"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                required
+                disabled={loading}
+              />
+              <i
+                className={`bi ${
+                  showPassword ? 'bi-eye-slash' : 'bi-eye'
+                } position-absolute`}
+                style={{
+                  right: '15px',
+                  top: '40px',
+                  cursor: 'pointer',
+                  color: '#2C3E50',
+                }}
+                onClick={() => setShowPassword(!showPassword)}
+              ></i>
+            </div>
+
+            {/* Logo Upload */}
+            <div className="mb-3 col-12">
+              <label className="form-label fw-semibold">Upload Logo</label>
+              <input
+                type="file"
+                className="form-control"
+                name="logo"
+                accept="image/*"
+                onChange={handleChange}
+                disabled={loading}
+              />
+              {preview && (
+                <div className="text-center mt-3">
+                  <img
+                    src={preview}
+                    alt="Logo Preview"
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '2px solid #2C3E50',
+                    }}
+                  />
+                  <p className="small text-muted mt-1">Logo Preview</p>
+                </div>
+              )}
+            </div>
           </div>
+          {/* Submit Button */}
           <button
             type="submit"
             className="btn w-100 text-white fw-semibold d-flex justify-content-center align-items-center"
@@ -291,6 +273,7 @@ const Signup = () => {
             )}
           </button>
         </form>
+
         <p className="text-center mt-3 mb-0">
           Already have an account?{' '}
           <Link

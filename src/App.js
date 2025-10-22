@@ -1,6 +1,5 @@
-import './App.css';
-import { Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Dashboard from './component/Dashboard';
 import Orders from './component/Orders';
 import Expenses from './component/Expenses';
@@ -11,6 +10,8 @@ import { DataProvider } from './DataContext';
 import Login from './component/Login';
 import Signup from './component/Signup';
 import ProtectedRoute from './component/ProtectedRoute';
+import useUserProfile from './component/useUserProfile';
+import './App.css';
 
 function App() {
   const [orders, setOrders] = useState([]);
@@ -20,177 +21,85 @@ function App() {
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsSidebarOpen(window.innerWidth >= 768);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  // Fetch user profile
+  const { user, loading } = useUserProfile();
 
-  const isAuthPage =
-    location.pathname === '/login' || location.pathname === '/signup';
-  let storedUser = null;
-  try {
-    storedUser = JSON.parse(localStorage.getItem('authUser'));
-  } catch (err) {
-    localStorage.removeItem('authUser'); // clear corrupted data
+  const isAuthPage = ['/login', '/signup'].includes(location.pathname);
+
+  if (loading) {
+    // Show loading while fetching user
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="spinner-border text-success" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
   }
-  const logo = storedUser?.logo || '/favicon.png';
-  const shopName = storedUser?.shopName || 'Laundry Shop';
-
 
   return (
     <div className="d-flex flex-column min-vh-100">
       <div className="d-flex flex-grow-1">
-        {/* Sidebar (hidden on auth pages) */}
-        {!isAuthPage && (
-          <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+        {/* Sidebar */}
+        {!isAuthPage && user && (
+          <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} user={user} />
         )}
 
         {/* Main Content */}
         <div
           className="flex-grow-1 d-flex flex-column"
           style={{
-            marginLeft: !isAuthPage && isSidebarOpen ? '220px' : '0',
+            marginLeft: !isAuthPage && isSidebarOpen ? '230px' : '0',
             transition: 'margin-left 0.3s ease',
-            backgroundColor: isAuthPage ? '#fff' : '#f8f9fa',
           }}
         >
-          {/* ✅ Sticky Navbar */}
-          {!isAuthPage && (
+          {/* Navbar */}
+          {!isAuthPage && user && (
             <nav
               className="navbar navbar-expand-md navbar-dark sticky-top shadow-sm"
-              style={{
-                backgroundColor: '#2C3E50',
-                padding: '0.75rem 1rem',
-                zIndex: 1000,
-              }}
+              style={{ backgroundColor: '#2C3E50', padding: '0.75rem 1rem' }}
             >
               <div className="container-fluid">
-                {/* Sidebar Toggle */}
                 <button
                   className="btn btn-outline-light d-md-none"
                   onClick={toggleSidebar}
-                  aria-label="Toggle sidebar"
-                  style={{
-                    border: 'none',
-                    backgroundColor: 'transparent',
-                  }}
                 >
                   <i className="bi bi-list fs-3"></i>
                 </button>
-
-                {/* Brand */}
-                <span
-                  className="navbar-brand d-flex align-items-center fw-bold"
-                  style={{ fontSize: '1.3rem', letterSpacing: '0.5px' }}
-                >
+                <span className="navbar-brand fw-bold">
                   <i className="bi bi-shop me-2 text-success"></i> Washify Admin
                 </span>
-
-                {/* Search */}
-                <form className="d-none d-md-flex ms-auto me-3">
-                  <input
-                    type="search"
-                    className="form-control form-control-sm"
-                    placeholder="Search..."
+                <div className="ms-auto text-white d-flex align-items-center">
+                  <img
+                    src={user.logo || '/favicon.png'}
+                    alt="Logo"
+                    className="rounded-circle me-2"
                     style={{
-                      width: '200px',
-                      borderRadius: '20px',
-                      border: 'none',
-                      padding: '0.4rem 0.8rem',
+                      width: '38px',
+                      height: '38px',
+                      border: '2px solid #1ABC9C',
                     }}
+                    onError={(e) => (e.target.src = '/favicon.png')}
                   />
-                </form>
-
-                {/* User Actions */}
-                <div className="d-flex align-items-center">
-
-                  {/* User Dropdown */}
-                  <div className="dropdown d-md-none">
-                    <button
-                      className="btn btn-outline-light dropdown-toggle d-flex align-items-center"
-                      type="button"
-                      id="userMenu"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
-                      style={{
-                        border: 'none',
-                        backgroundColor: 'transparent',
-                      }}
-                    >
-                      <img
-                        src={logo}
-                        alt="Logo"
-                        className="rounded-circle me-2"
-                        onError={(e) => (e.target.src = '/favicon.png')}
-                        style={{
-                          width: '38px',
-                          height: '38px',
-                          objectFit: 'cover',
-                          border: '2px solid #1ABC9C',
-                        }}
-                      />
-                      <span className="fw-semibold">
-                        {shopName}
-                      </span>
-                    </button>
-                    <ul
-                      className="dropdown-menu dropdown-menu-end shadow-sm"
-                      aria-labelledby="userMenu"
-                    >
-                      <li>
-                        <Link className="dropdown-item" to="/profile">
-                          <i className="bi bi-person me-2"></i> Profile
-                        </Link>
-                      </li>
-                      <li>
-                        <Link className="dropdown-item" to="/settings">
-                          <i className="bi bi-gear me-2"></i> Settings
-                        </Link>
-                      </li>
-                      <li>
-                        <hr className="dropdown-divider" />
-                      </li>
-                      <li>
-                        <button className="dropdown-item text-danger">
-                          <i className="bi bi-box-arrow-right me-2"></i> Logout
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                  <button
-                    className="btn btn-sm btn-outline-light me-3 position-relative d-none d-md-inline"
-                    style={{ borderRadius: '50%' }}
-                  >
-                    <i className="bi bi-bell fs-5"></i>
-                    <span
-                      className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                      style={{ fontSize: '0.6rem' }}
-                    >
-                      3
-                    </span>
-                  </button>
+                  <span>{user.shopName || 'Laundry Shop'}</span>
                 </div>
               </div>
             </nav>
           )}
 
-          {/* ✅ Page Routes */}
+          {/* Routes */}
           <main className="flex-grow-1 p-4">
             <DataProvider>
               <Routes>
-                {/* Auth Pages */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
 
-                {/* Protected Pages */}
+                {/* Protected Routes */}
                 <Route
                   path="/"
                   element={
                     <ProtectedRoute>
-                      <Dashboard orders={orders} expenses={expenses} />
+                      <Dashboard orders={orders} expenses={expenses} user={user} />
                     </ProtectedRoute>
                   }
                 />
@@ -198,7 +107,7 @@ function App() {
                   path="/orders"
                   element={
                     <ProtectedRoute>
-                      <Orders orders={orders} setOrders={setOrders} />
+                      <Orders orders={orders} setOrders={setOrders} user={user}  />
                     </ProtectedRoute>
                   }
                 />
@@ -206,7 +115,7 @@ function App() {
                   path="/expenses"
                   element={
                     <ProtectedRoute>
-                      <Expenses expenses={expenses} setExpenses={setExpenses} />
+                      <Expenses expenses={expenses} setExpenses={setExpenses} user={user} />
                     </ProtectedRoute>
                   }
                 />
@@ -214,27 +123,21 @@ function App() {
                   path="/reports"
                   element={
                     <ProtectedRoute>
-                      <Reports orders={orders} expenses={expenses} />
+                      <Reports orders={orders} expenses={expenses} user={user} />
                     </ProtectedRoute>
                   }
                 />
                 <Route path="/dashboard" element={<Navigate to="/" />} />
-
-                {/* 404 */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </DataProvider>
           </main>
 
-          {/* ✅ Footer */}
+          {/* Footer */}
           {!isAuthPage && (
             <footer
               className="text-center py-3 mt-auto"
-              style={{
-                backgroundColor: '#2C3E50',
-                color: 'white',
-                fontSize: '0.9rem',
-              }}
+              style={{ backgroundColor: '#2C3E50', color: 'white' }}
             >
               © {new Date().getFullYear()} Washify | All Rights Reserved
             </footer>

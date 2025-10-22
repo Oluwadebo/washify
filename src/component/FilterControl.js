@@ -14,16 +14,13 @@ const FilterControl = ({
   months,
   years,
 }) => {
-  // Auto-reset dates when filterType changes
+  // ✅ Auto-reset dates when filter type changes
   useEffect(() => {
     const todayString = new Date().toISOString().split('T')[0];
     if (filterType === 'today') {
       setStartDate(todayString);
       setEndDate(todayString);
-    } else if (filterType === 'month') {
-      setStartDate('');
-      setEndDate('');
-    } else if (filterType === 'year') {
+    } else {
       setStartDate('');
       setEndDate('');
     }
@@ -32,7 +29,7 @@ const FilterControl = ({
   return (
     <div className="row g-3 align-items-end mb-3">
       {/* Filter Type */}
-      <div className="col-4 col-md-3">
+      <div className="col-6 col-md-3">
         <label className="form-label fw-semibold">Filter By</label>
         <select
           className="form-select"
@@ -46,10 +43,10 @@ const FilterControl = ({
         </select>
       </div>
 
-      {/* Month & Year Selection */}
+      {/* Month + Year Filter */}
       {filterType === 'month' && (
         <>
-          <div className="col-4 col-md-3">
+          <div className="col-6 col-md-3">
             <label className="form-label fw-semibold">Month</label>
             <select
               className="form-select"
@@ -63,7 +60,7 @@ const FilterControl = ({
               ))}
             </select>
           </div>
-          <div className="col-4 col-md-3">
+          <div className="col-6 col-md-3">
             <label className="form-label fw-semibold">Year</label>
             <select
               className="form-select"
@@ -80,9 +77,9 @@ const FilterControl = ({
         </>
       )}
 
-      {/* Year Only */}
+      {/* Year Filter */}
       {filterType === 'year' && (
-        <div className="col-md-3">
+        <div className="col-6 col-md-3">
           <label className="form-label fw-semibold">Year</label>
           <select
             className="form-select"
@@ -101,7 +98,7 @@ const FilterControl = ({
       {/* Custom Date Range */}
       {filterType === 'custom' && (
         <>
-          <div className="col-md-3">
+          <div className="col-6 col-md-3">
             <label className="form-label fw-semibold">Start Date</label>
             <input
               type="date"
@@ -110,7 +107,7 @@ const FilterControl = ({
               onChange={(e) => setStartDate(e.target.value)}
             />
           </div>
-          <div className="col-md-3">
+          <div className="col-6 col-md-3">
             <label className="form-label fw-semibold">End Date</label>
             <input
               type="date"

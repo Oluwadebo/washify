@@ -1,9 +1,17 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import useUserProfile from './useUserProfile.js';
 
 const useDateFilter = () => {
-  // ✅ Initialize today and refresh at midnight
   const [today, setToday] = useState(new Date());
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
 
+  // ✅ Fetch logged-in user from backend
+  const user = useUserProfile();
+  useEffect(() => {
+    setCurrentUserEmail(user?.email || '');
+  }, [user]);
+
+  // ✅ Refresh at midnight
   useEffect(() => {
     const now = new Date();
     const msUntilMidnight =
@@ -22,9 +30,8 @@ const useDateFilter = () => {
   const [startDate, setStartDate] = useState(today.toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
 
-  // ✅ Reset startDate & endDate if filterType is 'today'
   useEffect(() => {
-    if (filterType === 'month') {
+    if (filterType === 'today') {
       const todayString = today.toISOString().split('T')[0];
       setStartDate(todayString);
       setEndDate(todayString);
@@ -49,15 +56,10 @@ const useDateFilter = () => {
     []
   );
 
-  const years = useMemo(() => Array.from({ length: 6 }, (_, i) => currentYear - i), [currentYear]);
-
-  let storedUser;
-  try {
-    storedUser = JSON.parse(localStorage.getItem('authUser'));
-  } catch {
-    storedUser = null;
-  }
-  const currentUserEmail = storedUser?.email || '';
+  const years = useMemo(
+    () => Array.from({ length: 6 }, (_, i) => currentYear - i),
+    [currentYear]
+  );
 
   const filterByDate = useCallback(
     (itemDate, itemEmail) => {
@@ -65,6 +67,7 @@ const useDateFilter = () => {
       const date = new Date(itemDate);
       if (isNaN(date)) return false;
 
+      // ✅ match logged-in user's email
       if (itemEmail && itemEmail !== currentUserEmail) return false;
 
       if (filterType === 'today') {
@@ -87,7 +90,15 @@ const useDateFilter = () => {
 
       return true;
     },
-    [filterType, selectedMonth, selectedYear, startDate, endDate, currentUserEmail, today]
+    [
+      filterType,
+      selectedMonth,
+      selectedYear,
+      startDate,
+      endDate,
+      currentUserEmail,
+      today,
+    ]
   );
 
   return {

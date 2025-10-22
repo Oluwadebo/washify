@@ -1,68 +1,47 @@
-// src/api/apiService.js
+// src/apiService.js
 import axios from 'axios';
+import { USERS, } from './endpoint';
 
+// ✅ Create Axios instance
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+    baseURL: USERS,
+    withCredentials: true,
 });
 
-export const isBackendActive = process.env.REACT_APP_USE_BACKEND === 'true';
-
-/**
- * Check if email exists
- */
-export const checkEmail = async (email) => {
-  if (isBackendActive) {
-    try {
-      const res = await API.post('/check-email', { email });
-      return res.data.exists ? 'exists' : 'unavailable';
-    } catch (err) {
-      console.error('Email check error:', err);
-      return null;
-    }
-  } else {
-    const storedUsers = JSON.parse(localStorage.getItem('AllUsers')) || [];
-    return storedUsers.find((u) => u.email.toLowerCase() === email)
-      ? 'exists'
-      : 'unavailable';
+// ✅ Reusable request helper
+const tryRequest = async (endpoint, data, config = {}) => {
+  try {
+    const res = await API.post(endpoint, data, config);
+    return res.data;
+  } catch (err) {
+    console.error(`${endpoint} error:`, err);
+    throw new Error(err.response?.data?.message || 'Request failed');
   }
 };
 
-/**
- * Save new user
- */
+// ✅ Always backend
+export const isBackendActive = true;
+
+// ✅ SIGNUP FUNCTION
 export const saveUser = async (userData) => {
-  if (isBackendActive) {
-    const formData = new FormData();
-    for (let key in userData) formData.append(key, userData[key]);
-    return await API.post('/signup', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-  } else {
-    const storedUsers = JSON.parse(localStorage.getItem('AllUsers')) || [];
-    storedUsers.push(userData);
-    localStorage.setItem('AllUsers', JSON.stringify(storedUsers));
-    return { status: 201 };
-  }
+  const formData = new FormData();
+  for (const key in userData) formData.append(key, userData[key]);
+
+  return await tryRequest('/signup', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 };
 
-/**
- * Login user
- */
+// ✅ CHECK EMAIL
+export const checkEmail = async (email) => {
+  const res = await tryRequest('/check-email', { email });
+  return res.status; // expect 'exists' or 'unavailable'
+};
+
+// ✅ LOGIN
 export const loginUser = async ({ email, password }) => {
-  if (isBackendActive) {
-    try {
-      const res = await API.post('/auth/login', { email, password });
-      return res.data;
-    } catch (err) {
-      throw new Error(err.response?.data?.message || 'Invalid credentials');
-    }
-  } else {
-    const storedUsers = JSON.parse(localStorage.getItem('AllUsers')) || [];
-    const user = storedUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    if (!user) throw new Error('No account found with this email. Please sign up.');
-    if (user.password !== password) throw new Error('Incorrect password. Please try again.');
-    return { user };
-  }
+  return await tryRequest('/login', { email, password });
 };
 
 export default API;
+// export { baseUrl };
