@@ -18,10 +18,6 @@ const Dashboard = () => {
         axios.get(`${ORDERS}`, { withCredentials: true }),
         axios.get(`${EXPENSES}`, { withCredentials: true }),
       ]);
-
-      console.log('Orders response:', ordersRes.data);
-      console.log('Expenses response:', expensesRes.data);
-
       setOrders(ordersRes.data);
       setExpenses(expensesRes.data);
     } catch (error) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Dashboard from './component/Dashboard';
 import Orders from './component/Orders';
@@ -134,7 +134,7 @@ function App() {
           </main>
 
           {/* Footer */}
-          {!isAuthPage && (
+          {!isAuthPage && user && (
             <footer
               className="text-center py-3 mt-auto"
               style={{ backgroundColor: '#2C3E50', color: 'white' }}

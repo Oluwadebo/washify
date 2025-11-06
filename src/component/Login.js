@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import {  Link } from 'react-router-dom';
 import { loginUser } from './apiService';
 
 const Login = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -24,10 +24,10 @@ const Login = () => {
       // ✅ Make API call to backend
       const data = await loginUser(form);
 
-      // ✅ No localStorage or sessionStorage
       // Just navigate on success
       if (data?.user) {
-        navigate('/');
+        window.location.href = '/';
+        // navigate('/');
       } else {
         throw new Error('Invalid login response from server.');
       }

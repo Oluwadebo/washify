@@ -12,6 +12,7 @@ const Orders = ({ user }) => {
   const [paymentStatus, setPaymentStatus] = useState('Pending');
   const [editingOrder, setEditingOrder] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // 🔹 Date filter hook
   const {
@@ -34,49 +35,42 @@ const Orders = ({ user }) => {
   const API_URL = ORDERS; // replace with your backend endpoint
 
   // 🔹 Load orders from backend
+
+ useEffect(() => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      // const  userId= user.id;
-      const response = await axios.get(`${API_URL}?userId=${user.id}`);
-      console.log(response.data)
+      const response = await axios.get(API_URL, { withCredentials: true });
       setOrders(response.data);
     } catch (error) {
-      console.error('Failed to fetch orders:', error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  fetchOrders();
+}, []);
 
   // 🔹 Add new order
-  const handleAddOrder = async (e) => {
-    e.preventDefault();
-    try {
-      const newOrder = {
-        customer,
-        service,
-        price: Number(price),
-        paymentStatus,
-        date: new Date().toISOString(),
-        userId: user.id,
-      };
-
-      const response = await axios.post(API_URL, newOrder);
-      console.log(response);
-      setOrders([response.data, ...orders]);
-
-      // Reset form
-      setCustomer('');
-      setPrice('');
-      setPaymentStatus('Pending');
-    } catch (error) {
-      console.error('Failed to add order:', error);
-    }
-  };
+ const handleAddOrder = async (e) => {
+  e.preventDefault();
+  try {
+    const newOrder = {
+      customer,
+      service,
+      price: Number(price),
+      paymentStatus,
+      date: new Date().toISOString(),
+    };
+    const response = await axios.post(API_URL, newOrder, { withCredentials: true });
+    setOrders([response.data, ...orders]);
+    setCustomer('');
+    setPrice('');
+    setPaymentStatus('Pending');
+  } catch (error) {
+    setError(error.message);
+  }
+};
 
   // 🔹 Save edited order
   const handleSaveEdit = async () => {
@@ -92,19 +86,20 @@ const Orders = ({ user }) => {
       );
       setEditingOrder(null);
     } catch (error) {
-      console.error('Failed to update order:', error);
+      setError(error.message);
     }
   };
 
   // 🔹 Delete order
-  const deleteOrder = async (id) => {
-    try {
-      await axios.delete(`${API_URL}/${id}`);
-      setOrders(orders.filter((order) => order.id !== id));
-    } catch (error) {
-      console.error('Failed to delete order:', error);
-    }
-  };
+ const deleteOrder = async (order) => {
+  try {
+    await axios.delete(`${API_URL}/${order._id}`, { withCredentials: true });
+    setOrders(orders.filter((o) => o._id !== order._id));
+  } catch (error) {
+    console.error('Delete failed:', error);
+    setError(error.message);
+  }
+};
 
   // 🔹 Filtered orders
   const filteredOrders = orders.filter((order) => filterByDate(order.date));
@@ -132,6 +127,8 @@ const Orders = ({ user }) => {
       </div>
 
       {/* 🔹 Add Order Form */}
+      {error && <div className="alert alert-danger py-2">{error}</div>}
+
       <form onSubmit={handleAddOrder} className="row g-3 mb-4">
         <div className="col-6 col-md-3">
           <input
@@ -243,7 +240,7 @@ const Orders = ({ user }) => {
                     </button>
                     <button
                       className="btn btn-sm btn-danger"
-                      onClick={() => deleteOrder(order.id)}
+                      onClick={() => deleteOrder(order)}
                     >
                       <i className="bi bi-trash"></i> Delete
                     </button>

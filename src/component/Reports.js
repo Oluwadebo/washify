@@ -4,8 +4,11 @@ import FilterControl from './FilterControl';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
+import axios from 'axios';
 import autoTable from 'jspdf-autotable';
 import { Pie, Bar } from 'react-chartjs-2';
+import { ORDERS, EXPENSES } from './endpoint';
+import useUserProfile from './useUserProfile';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import {
   Chart as ChartJS,
@@ -50,43 +53,40 @@ const Reports = () => {
     filterByDate,
   } = useDateFilter();
 
+  // ✅ Fetch user's orders and expenses from backend
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [ordersRes, expensesRes] = await Promise.all([
+          axios.get(`${ORDERS}`, { withCredentials: true }),
+          axios.get(`${EXPENSES}`, { withCredentials: true }),
+        ]);
+        setOrders(ordersRes.data);
+        setExpenses(expensesRes.data);
+      } catch (error) {
+        console.error('❌ Failed to load dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const pieRef = useRef(null);
   const barRef = useRef(null);
 
-  let currentUserEmail = null;
-  let storedUser = null;
-  try {
-    storedUser = JSON.parse(localStorage.getItem('authUser'));
-    currentUserEmail = storedUser?.email;
-  } catch {
-    currentUserEmail = null;
-    localStorage.removeItem('authUser');
-  }
+  const { user } = useUserProfile();
 
-  const shopName = storedUser?.shopName || 'Shop Admin';
-  const tell = storedUser?.tell || 'Shop Phone number';
-  const address = storedUser?.address || 'Shop adress';
-  const logo = storedUser?.logo || '/favicon.png';
-  const admin = storedUser?.LastName || 'Admin';
+  const shopName = user?.shopName || 'Shop Admin';
+  const tell = user?.tell || 'Shop Phone number';
+  const address = user?.address || 'Shop adress';
+  const logo = user?.logo || '/favicon.png';
+  const admin = user?.LastName || 'Admin';
 
-  // ✅ Load user's orders & expenses from localStorage
-  useEffect(() => {
-    if (currentUserEmail) {
-      const savedOrders = JSON.parse(localStorage.getItem(`orders`)) || [];
-      const savedExpenses = JSON.parse(localStorage.getItem(`expenses`)) || [];
-
-      setOrders(savedOrders);
-      setExpenses(savedExpenses);
-    }
-  }, [currentUserEmail]);
-
-  // ✅ Filtered data for logged-in user
-  const filteredOrders = orders.filter(
-    (o) => o.userEmail === currentUserEmail && filterByDate(o.date)
-  );
-  const filteredExpenses = expenses.filter(
-    (e) => e.userEmail === currentUserEmail && filterByDate(e.date)
-  );
+  // ✅ Filtered data (by date only — user already filtered on backend)
+  const filteredOrders = orders.filter((o) => filterByDate(o.date));
+  const filteredExpenses = expenses.filter((e) => filterByDate(e.date));
 
   // Totals
   const completedOrders = filteredOrders.filter(
@@ -542,7 +542,10 @@ const Reports = () => {
             <button
               className="btn btn-success w-100 d-flex align-items-center justify-content-center "
               onClick={exportToExcel}
-               disabled={loading || (filteredOrders.length === 0 && filteredExpenses.length === 0)}
+              disabled={
+                loading ||
+                (filteredOrders.length === 0 && filteredExpenses.length === 0)
+              }
               aria-label="Export report to Excel"
             >
               {loading ? (
@@ -565,7 +568,10 @@ const Reports = () => {
             <button
               className="btn btn-danger w-100 d-flex align-items-center justify-content-center"
               onClick={() => exportToPDF()}
-               disabled={loading || (filteredOrders.length === 0 && filteredExpenses.length === 0)}
+              disabled={
+                loading ||
+                (filteredOrders.length === 0 && filteredExpenses.length === 0)
+              }
               aria-label="Export report to PDF"
             >
               {loading ? (
@@ -608,14 +614,16 @@ const Reports = () => {
       {/* Charts */}
       <div className="row mt-4">
         <div className="col-md-6 col-12 mb-3">
-          <h6 className="fw-bold text-center text-secondary mb-2">Income vs Pending vs Expenses</h6>
+          <h6 className="fw-bold text-center text-secondary mb-2">
+            Income vs Pending vs Expenses
+          </h6>
           <div
             className="p-2 border rounded text-center"
             style={{
-  height: '45vh',
-  minHeight: '250px',
-  position: 'relative',
-}}
+              height: '45vh',
+              minHeight: '250px',
+              position: 'relative',
+            }}
           >
             <Pie
               data={incomeExpenseData}
@@ -630,14 +638,16 @@ const Reports = () => {
           </div>
         </div>
         <div className="col-md-6 col-12 mb-3">
-          <h6 className="fw-bold text-center text-secondary mb-2">Daily Breakdown</h6>
+          <h6 className="fw-bold text-center text-secondary mb-2">
+            Daily Breakdown
+          </h6>
           <div
             className="p-2 border rounded"
             style={{
-  height: '45vh',
-  minHeight: '250px',
-  position: 'relative',
-}}
+              height: '45vh',
+              minHeight: '250px',
+              position: 'relative',
+            }}
           >
             <Bar
               ref={barRef}

@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import useDateFilter from './useDateFilter';
 import FilterControl from './FilterControl';
-import { EXPENSES, } from './endpoint';
-
+import { EXPENSES } from './endpoint';
 
 const Expenses = ({ user }) => {
   const [expenses, setExpenses] = useState([]);
@@ -31,54 +30,38 @@ const Expenses = ({ user }) => {
   const API_URL = EXPENSES;
 
   // Load expenses from backend
-  const fetchExpenses = async () => {
-    // try {
-    //   const res = await axios.get(API_URL, {
-    //     headers: { Authorization: `Bearer ${token}` },
-    //   });
-    //   setExpenses(res.data);
-    // } catch (err) {
-    //   console.error('Failed to fetch expenses:', err);
-    // }
-    try {
-          // setLoading(true);
-          // const  userId= user.id;
-          const response = await axios.get(`${API_URL}?userId=${user.id}`);
-          setExpenses(response.data);
-        } catch (error) {
-          console.error('Failed to fetch orders:', error);
-        } finally {
-          // setLoading(false);
-        }
-  };
-
   useEffect(() => {
+    const fetchExpenses = async () => {
+      try {
+        const response = await axios.get(API_URL, { withCredentials: true }); // ✅ no userId query
+        setExpenses(response.data);
+      } catch (error) {
+        console.error('Failed to fetch expenses:', error);
+      }
+    };
     fetchExpenses();
   }, []);
 
   // Add new expense
-  const handleAddExpense = async (e) => {
-    e.preventDefault();
-    try {
-      const newExpense = {
-        amount: Number(amount),
-        category: category === 'Other' ? customCategory : category,
-        date: new Date().toISOString(),userId: user.id,
-      };
-      const res = await axios.post(API_URL, newExpense);
-      // const res = await axios.post(API_URL, newExpense, {
-      //   headers: { Authorization: `Bearer ${token}` },
-      // });
-      setExpenses([res.data, ...expenses]);
+ const handleAddExpense = async (e) => {
+  e.preventDefault();
+  try {
+    const newExpense = {
+      amount: Number(amount),
+      category: category === 'Other' ? customCategory : category,
+      date: new Date().toISOString(),
+    };
 
-      // Reset form
-      setAmount('');
-      setCategory('Rent');
-      setCustomCategory('');
-    } catch (err) {
-      console.error('Failed to add expense:', err);
-    }
-  };
+    const res = await axios.post(API_URL, newExpense, { withCredentials: true }); // ✅ secure post
+    setExpenses([res.data, ...expenses]);
+
+    setAmount('');
+    setCategory('Rent');
+    setCustomCategory('');
+  } catch (err) {
+    console.error('Failed to add expense:', err);
+  }
+};
 
   const filteredExpenses = expenses.filter((exp) => filterByDate(exp.date));
 
@@ -142,7 +125,9 @@ const Expenses = ({ user }) => {
         </div>
 
         <div className="col-md-1">
-          <button type="submit" className="btn btn-primary w-100">Add</button>
+          <button type="submit" className="btn btn-primary w-100">
+            Add
+          </button>
         </div>
       </form>
 
@@ -150,9 +135,15 @@ const Expenses = ({ user }) => {
       <table className="table table-bordered table-striped table-hover shadow-sm text-center table-responsive">
         <thead>
           <tr>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Amount</th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Category</th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>Date</th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+              Amount
+            </th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+              Category
+            </th>
+            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+              Date
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -166,7 +157,9 @@ const Expenses = ({ user }) => {
             ))
           ) : (
             <tr>
-              <td colSpan="4" className="text-muted">No expenses found.</td>
+              <td colSpan="4" className="text-muted">
+                No expenses found.
+              </td>
             </tr>
           )}
         </tbody>

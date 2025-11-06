@@ -2,6 +2,8 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import UserAvatar from './UserAvatar';
+import { baseUrl, } from './endpoint';
+
 
 const Sidebar = ({ isOpen, toggleSidebar, user }) => {
   const navigate = useNavigate();
@@ -16,8 +18,7 @@ const Sidebar = ({ isOpen, toggleSidebar, user }) => {
   // ✅ Handle logout
   const handleLogout = async () => {
     try {
-      await axios.post(
-        'http://localhost:5000/api/users/logout',
+      await axios.post(`${baseUrl}/users/logout`,
         {},
         { withCredentials: true } // ✅ Correct placement for cookie-based logout
       );
