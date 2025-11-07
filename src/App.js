@@ -67,9 +67,9 @@ function App() {
                   <i className="bi bi-list fs-3"></i>
                 </button>
                 <span className="navbar-brand fw-bold">
-                  <i className="bi bi-shop me-2 text-success"></i> Washify Admin
+                  <i className="bi bi-shop me-2 text-light"></i> Washify Admin
                 </span>
-                <div className="ms-auto text-white d-flex align-items-center">
+                <div className="ms-auto text-white d-flex align-items-center d-md-none">
                   <img
                     src={user.logo || '/favicon.png'}
                     alt="Logo"
