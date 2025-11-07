@@ -9,6 +9,7 @@ const Expenses = ({ user }) => {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Rent');
   const [customCategory, setCustomCategory] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Date filter hook
   const {
@@ -33,35 +34,40 @@ const Expenses = ({ user }) => {
   useEffect(() => {
     const fetchExpenses = async () => {
       try {
+        setLoading(true);
         const response = await axios.get(API_URL, { withCredentials: true }); // ✅ no userId query
         setExpenses(response.data);
       } catch (error) {
         console.error('Failed to fetch expenses:', error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchExpenses();
   }, []);
 
   // Add new expense
- const handleAddExpense = async (e) => {
-  e.preventDefault();
-  try {
-    const newExpense = {
-      amount: Number(amount),
-      category: category === 'Other' ? customCategory : category,
-      date: new Date().toISOString(),
-    };
+  const handleAddExpense = async (e) => {
+    e.preventDefault();
+    try {
+      const newExpense = {
+        amount: Number(amount),
+        category: category === 'Other' ? customCategory : category,
+        date: new Date().toISOString(),
+      };
 
-    const res = await axios.post(API_URL, newExpense, { withCredentials: true }); // ✅ secure post
-    setExpenses([res.data, ...expenses]);
+      const res = await axios.post(API_URL, newExpense, {
+        withCredentials: true,
+      }); // ✅ secure post
+      setExpenses([res.data, ...expenses]);
 
-    setAmount('');
-    setCategory('Rent');
-    setCustomCategory('');
-  } catch (err) {
-    console.error('Failed to add expense:', err);
-  }
-};
+      setAmount('');
+      setCategory('Rent');
+      setCustomCategory('');
+    } catch (err) {
+      console.error('Failed to add expense:', err);
+    }
+  };
 
   const filteredExpenses = expenses.filter((exp) => filterByDate(exp.date));
 
@@ -132,14 +138,17 @@ const Expenses = ({ user }) => {
       </form>
 
       <h5>Expenses List</h5>
+      {loading ? (
+        <p>Loading expenses...</p>
+      ) : (
       <table className="table table-bordered table-striped table-hover shadow-sm text-center table-responsive">
         <thead>
           <tr>
             <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Amount
+              Category
             </th>
             <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Category
+              Amount
             </th>
             <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
               Date
@@ -150,8 +159,8 @@ const Expenses = ({ user }) => {
           {filteredExpenses.length > 0 ? (
             filteredExpenses.map((exp) => (
               <tr key={exp._id}>
-                <td>₦{exp.amount.toLocaleString()}</td>
                 <td>{exp.category}</td>
+                <td>₦{exp.amount.toLocaleString()}</td>
                 <td>{new Date(exp.date).toLocaleDateString()}</td>
               </tr>
             ))
@@ -164,6 +173,7 @@ const Expenses = ({ user }) => {
           )}
         </tbody>
       </table>
+      )}
     </div>
   );
 };
