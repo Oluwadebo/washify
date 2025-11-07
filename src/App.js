@@ -61,7 +61,7 @@ function App() {
             >
               <div className="container-fluid">
                 <button
-                  className="btn btn-outline-light d-md-none mx-1"
+                  className="btn btn-outline-light d-md-none"
                   onClick={toggleSidebar}
                 >
                   <i className="bi bi-list fs-3"></i>
