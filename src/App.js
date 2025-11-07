@@ -64,9 +64,9 @@ function App() {
                   className="btn btn-outline-light d-md-none"
                   onClick={toggleSidebar}
                 >
-                  <i className="bi bi-list fs-3"></i>
+                  <i className="bi bi-list fs-3 me-2"></i>
                 </button>
-                <span className="navbar-brand fw-bold">
+                <span className="navbar-brand fw-bold ">
                   <i className="bi bi-shop me-2 text-light"></i> Washify Admin
                 </span>
                 <div className="ms-auto text-white d-flex align-items-center d-md-none">
