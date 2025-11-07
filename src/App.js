@@ -61,10 +61,10 @@ function App() {
             >
               <div className="container-fluid">
                 <button
-                  className="btn btn-outline-light d-md-none"
+                  className="btn btn-outline-light d-md-none mx-1"
                   onClick={toggleSidebar}
                 >
-                  <i className="bi bi-list fs-3 mx-1"></i>
+                  <i className="bi bi-list fs-3"></i>
                 </button>
                 <span className="navbar-brand fw-bold ">
                   <i className="bi bi-shop me-2 text-light"></i> Washify Admin
