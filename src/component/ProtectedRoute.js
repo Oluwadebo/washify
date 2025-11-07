@@ -2,8 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import axios from 'axios';
-import { baseUrl, } from './endpoint';
-
+import { baseUrl } from './endpoint';
 
 const ProtectedRoute = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null); // null = loading
@@ -11,9 +10,19 @@ const ProtectedRoute = ({ children }) => {
 
   useEffect(() => {
     const validateUser = async () => {
+      const token = localStorage.getItem('token'); // 🔥 add this
+
+      if (!token) {
+        setIsAuthenticated(false);
+        setLoading(false);
+        return;
+      }
       try {
         const res = await axios.get(`${baseUrl}/users/validate`, {
-          withCredentials: true, // ✅ includes cookies in the request
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          // withCredentials: true, // ✅ includes cookies in the request
         });
         if (res.data.valid) {
           setIsAuthenticated(true);

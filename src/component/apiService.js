@@ -1,11 +1,11 @@
 // src/apiService.js
 import axios from 'axios';
-import { USERS, } from './endpoint';
+import { USERS } from './endpoint';
 
 // ✅ Create Axios instance
 const API = axios.create({
-    baseURL: USERS,
-    withCredentials: true,
+  baseURL: USERS,
+  withCredentials: true,
 });
 
 // ✅ Reusable request helper
@@ -40,7 +40,9 @@ export const checkEmail = async (email) => {
 
 // ✅ LOGIN
 export const loginUser = async ({ email, password }) => {
-  return await tryRequest('/login', { email, password });
+  const res = await API.post('/login', { email, password });
+  localStorage.setItem('token', res.data.token);
+  return res.data;
 };
 
 export default API;
