@@ -5,13 +5,12 @@ import { baseUrl } from './endpoint';
 const useUserProfile = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+const token = localStorage.getItem('token');
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const { data } = await axios.get(`${baseUrl}/users/profile`, {
-          withCredentials: true,
-        });
+        const { data } = await axios.get(`${baseUrl}/users/profile`, { headers: { Authorization: `Bearer ${token}` }});
         setUser(data);
       } catch (err) {
         console.error('Failed to fetch user profile:', err);

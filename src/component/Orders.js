@@ -13,6 +13,7 @@ const Orders = ({ user }) => {
   const [editingOrder, setEditingOrder] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+const token = localStorage.getItem('token');
 
   // 🔹 Date filter hook
   const {
@@ -40,7 +41,7 @@ const Orders = ({ user }) => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL, { withCredentials: true });
+      const response = await axios.get(API_URL, { headers: { Authorization: `Bearer ${token}` }});
       setOrders(response.data);
     } catch (error) {
       setError(error.message);
@@ -62,11 +63,14 @@ const Orders = ({ user }) => {
       paymentStatus,
       date: new Date().toISOString(),
     };
-    const response = await axios.post(API_URL, newOrder, { withCredentials: true });
+      setLoading(true);
+    const response = await axios.post(API_URL, newOrder, { headers: { Authorization: `Bearer ${token}` }});
     setOrders([response.data, ...orders]);
     setCustomer('');
     setPrice('');
     setPaymentStatus('Pending');
+      setLoading(false);
+
   } catch (error) {
     setError(error.message);
   }
@@ -76,12 +80,12 @@ const Orders = ({ user }) => {
   const handleSaveEdit = async () => {
     try {
       const response = await axios.put(
-        `${API_URL}/${editingOrder.id}`,
-        editingOrder
+        `${API_URL}/${editingOrder._id}`,
+        editingOrder,{ headers: { Authorization: `Bearer ${token}` } }
       );
       setOrders(
         orders.map((order) =>
-          order.id === response.data.id ? response.data : order
+          order._id === response.data._id ? response.data : order
         )
       );
       setEditingOrder(null);
@@ -93,7 +97,7 @@ const Orders = ({ user }) => {
   // 🔹 Delete order
  const deleteOrder = async (order) => {
   try {
-    await axios.delete(`${API_URL}/${order._id}`, { withCredentials: true });
+    await axios.delete(`${API_URL}/${order._id}`,{ headers: { Authorization: `Bearer ${token}` }});
     setOrders(orders.filter((o) => o._id !== order._id));
   } catch (error) {
     console.error('Delete failed:', error);
@@ -185,7 +189,7 @@ const Orders = ({ user }) => {
       {/* 🔹 Orders Table */}
       <h5>Orders List</h5>
       {loading ? (
-        <p>Loading orders...</p>
+        <p className='mt-3'>Loading orders, please wait...</p>
       ) : (
         <table className="table table-bordered table-striped table-hover shadow-sm text-center table-responsive">
           <thead>

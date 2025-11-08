@@ -30,7 +30,7 @@ function App() {
     // Show loading while fetching user
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
-        <div className="spinner-border text-success" role="status">
+        <div className="spinner-border text-success" role="status" style={{ width: '4rem', height: '4rem' }}>
           <span className="visually-hidden">Loading...</span>
         </div>
       </div>
@@ -67,9 +67,10 @@ function App() {
                   <i className="bi bi-list fs-3"></i>
                 </button>
                 <span className="navbar-brand fw-bold pl-1">
-                  <i className="bi bi-shop me-2 text-light"></i> Washify Admin
+                  <i className="bi bi-shop me-2 text-light d-none d-md-inline"></i>Admin
                 </span>
                 <div className="ms-auto text-white d-flex align-items-center d-md-none">
+                  <span>{user.shopName || 'Shop Admin'}</span>
                   <img
                     src={user.logo || '/favicon.png'}
                     alt="Logo"
@@ -81,7 +82,6 @@ function App() {
                     }}
                     onError={(e) => (e.target.src = '/favicon.png')}
                   />
-                  <span>{user.shopName || 'Laundry Shop'}</span>
                 </div>
               </div>
             </nav>

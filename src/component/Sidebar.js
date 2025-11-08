@@ -17,16 +17,8 @@ const Sidebar = ({ isOpen, toggleSidebar, user }) => {
 
   // ✅ Handle logout
   const handleLogout = async () => {
-    try {
-      await axios.post(`${baseUrl}/users/logout`,
-        {},
-        { withCredentials: true } // ✅ Correct placement for cookie-based logout
-      );
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      navigate('/login');
-    }
+    localStorage.removeItem('token');
+    navigate('/login');
   };
 
   return (

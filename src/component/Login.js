@@ -1,13 +1,23 @@
-import React, { useState } from 'react';
-import {  Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { loginUser } from './apiService';
 
 const Login = () => {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const validateUser = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        navigate('/');
+      }
+    };
+    validateUser();
+  }, []);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });

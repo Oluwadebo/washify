@@ -5,12 +5,13 @@ import axios from 'axios';
 import { baseUrl } from './endpoint';
 
 const ProtectedRoute = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(null); // null = loading
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [loading, setLoading] = useState(true);
+   const [fadeIn, setFadeIn] = useState(false);
 
   useEffect(() => {
     const validateUser = async () => {
-      const token = localStorage.getItem('token'); // 🔥 add this
+      const token = localStorage.getItem('token');
 
       if (!token) {
         setIsAuthenticated(false);
@@ -22,7 +23,6 @@ const ProtectedRoute = ({ children }) => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          // withCredentials: true, // ✅ includes cookies in the request
         });
         if (res.data.valid) {
           setIsAuthenticated(true);
@@ -34,6 +34,7 @@ const ProtectedRoute = ({ children }) => {
         setIsAuthenticated(false);
       } finally {
         setLoading(false);
+        setFadeIn(true);
       }
     };
 
@@ -41,13 +42,19 @@ const ProtectedRoute = ({ children }) => {
   }, []);
 
   // ✅ Loading state
-  if (loading) return <div className="text-center p-5">loading...</div>;
+  if (loading) return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="spinner-border text-success" role="status" style={{ width: '4rem', height: '4rem' }}>
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
 
   // ✅ Not authenticated → redirect
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
   // ✅ Authenticated → render page
-  return children;
+  return <div className={`fade-in ${fadeIn ? 'visible' : ''}`}>{children}</div>;
 };
 
 export default ProtectedRoute;

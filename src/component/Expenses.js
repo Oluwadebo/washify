@@ -10,6 +10,7 @@ const Expenses = ({ user }) => {
   const [category, setCategory] = useState('Rent');
   const [customCategory, setCustomCategory] = useState('');
   const [loading, setLoading] = useState(false);
+const token = localStorage.getItem('token');
 
   // Date filter hook
   const {
@@ -35,7 +36,7 @@ const Expenses = ({ user }) => {
     const fetchExpenses = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(API_URL, { withCredentials: true }); // ✅ no userId query
+        const response = await axios.get(API_URL, { headers: { Authorization: `Bearer ${token}` }}); // ✅ no userId query
         setExpenses(response.data);
       } catch (error) {
         console.error('Failed to fetch expenses:', error);
