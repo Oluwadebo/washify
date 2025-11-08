@@ -1,8 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import UserAvatar from './UserAvatar';
-import { baseUrl, } from './endpoint';
 
 
 const Sidebar = ({ isOpen, toggleSidebar, user }) => {

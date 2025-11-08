@@ -10,7 +10,7 @@ const Expenses = ({ user }) => {
   const [category, setCategory] = useState('Rent');
   const [customCategory, setCustomCategory] = useState('');
   const [loading, setLoading] = useState(false);
-const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token');
 
   // Date filter hook
   const {
@@ -36,7 +36,9 @@ const token = localStorage.getItem('token');
     const fetchExpenses = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(API_URL, { headers: { Authorization: `Bearer ${token}` }}); // ✅ no userId query
+        const response = await axios.get(API_URL, {
+          headers: { Authorization: `Bearer ${token}` },
+        }); // ✅ no userId query
         setExpenses(response.data);
       } catch (error) {
         console.error('Failed to fetch expenses:', error);
@@ -67,6 +69,18 @@ const token = localStorage.getItem('token');
       setCustomCategory('');
     } catch (err) {
       console.error('Failed to add expense:', err);
+    }
+  };
+
+  const deleteOrder = async (exp) => {
+    try {
+      await axios.delete(`${API_URL}/${exp._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setExpenses(expenses.filter((o) => o._id !== exp._id));
+    } catch (error) {
+      console.error('Delete failed:', error);
+      // setError(error.message);
     }
   };
 
@@ -131,8 +145,12 @@ const token = localStorage.getItem('token');
           />
         </div>
 
-        <div className="col-md-1">
-          <button type="submit" className="btn btn-primary w-100">
+        <div className="col-md-2">
+          <button
+            type="submit"
+            className="btn w-100"
+            style={{ backgroundColor: '#2C3E50', color: '#ECF0F1' }}
+          >
             Add
           </button>
         </div>
@@ -142,38 +160,45 @@ const token = localStorage.getItem('token');
       {loading ? (
         <p>Loading expenses...</p>
       ) : (
-      <table className="table table-bordered table-striped table-hover shadow-sm text-center table-responsive">
-        <thead>
-          <tr>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Category
-            </th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Amount
-            </th>
-            <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
-              Date
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredExpenses.length > 0 ? (
-            filteredExpenses.map((exp) => (
-              <tr key={exp._id}>
-                <td>{exp.category}</td>
-                <td>₦{exp.amount.toLocaleString()}</td>
-                <td>{new Date(exp.date).toLocaleDateString()}</td>
-              </tr>
-            ))
-          ) : (
+        <table className="table table-bordered table-striped table-hover shadow-sm text-center table-responsive">
+          <thead>
             <tr>
-              <td colSpan="4" className="text-muted">
-                No expenses found.
-              </td>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                Category
+              </th>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                Amount
+              </th>
+              <th style={{ backgroundColor: '#34495E', color: '#ECF0F1' }}>
+                Actions
+              </th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filteredExpenses.length > 0 ? (
+              filteredExpenses.map((exp) => (
+                <tr key={exp._id}>
+                  <td>{exp.category}</td>
+                  <td>₦{exp.amount.toLocaleString()}</td>
+                   <td>
+                    <button
+                      className="btn btn-sm btn-danger"
+                      onClick={() => deleteOrder(exp)}
+                    >
+                      <i className="bi bi-trash"></i> Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" className="text-muted">
+                  No expenses found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       )}
     </div>
   );

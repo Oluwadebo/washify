@@ -36,6 +36,8 @@ const Reports = () => {
   const [orders, setOrders] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const token = localStorage.getItem('token');
+
 
   const {
     filterType,
@@ -58,8 +60,12 @@ const Reports = () => {
     const fetchData = async () => {
       try {
         const [ordersRes, expensesRes] = await Promise.all([
-          axios.get(`${ORDERS}`, { withCredentials: true }),
-          axios.get(`${EXPENSES}`, { withCredentials: true }),
+          axios.get(`${ORDERS}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+          axios.get(`${EXPENSES}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
         ]);
         setOrders(ordersRes.data);
         setExpenses(expensesRes.data);
@@ -264,7 +270,7 @@ const Reports = () => {
     });
 
     const buf = await wb.xlsx.writeBuffer();
-    saveAs(new Blob([buf]), 'Report.xlsx');
+    saveAs(new Blob([buf]), `${shopName}_report.xlsx`);
     setLoading(false);
   };
 
@@ -336,6 +342,8 @@ const Reports = () => {
         ? `${
             months.find((m) => m.value === Number(selectedMonth)).label
           } ${selectedYear}`
+        : filterType === 'year'
+        ? `${selectedYear}`
         : filterType.charAt(0).toUpperCase() + filterType.slice(1);
     doc.setFontSize(10);
     doc.text(`Report Period: ${reportPeriod}`, 105, 46, { align: 'center' });
@@ -489,7 +497,7 @@ const Reports = () => {
       doc.setTextColor(100);
       doc.text(`Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
     }
-    doc.save(`Report_${reportPeriod}.pdf`);
+    doc.save(`${shopName}_report_${reportPeriod}.pdf`);
     setLoading(false);
   };
 
