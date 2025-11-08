@@ -47,7 +47,7 @@ const Expenses = ({ user }) => {
       }
     };
     fetchExpenses();
-  }, []);
+  }, [API_URL, token]);
 
   // Add new expense
   const handleAddExpense = async (e) => {
