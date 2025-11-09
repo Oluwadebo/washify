@@ -60,8 +60,8 @@ const Expenses = ({ user }) => {
       };
 
       const res = await axios.post(API_URL, newExpense, {
-        withCredentials: true,
-      }); // ✅ secure post
+          headers: { Authorization: `Bearer ${token}` },
+        }); // ✅ secure post
       setExpenses([res.data, ...expenses]);
 
       setAmount('');
