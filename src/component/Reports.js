@@ -77,7 +77,7 @@ const Reports = () => {
     };
 
     fetchData();
-  }, [token]);
+  }, []);
 
   const pieRef = useRef(null);
   const barRef = useRef(null);

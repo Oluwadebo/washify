@@ -32,7 +32,7 @@ const Dashboard = () => {
     };
 
     fetchData();
-  }, [token]);
+  }, []);
 
   const {
     filterType,

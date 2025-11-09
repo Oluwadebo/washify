@@ -50,7 +50,7 @@ const token = localStorage.getItem('token');
     }
   };
   fetchOrders();
-}, [API_URL, token]);
+}, []);
 
   // 🔹 Add new order
  const handleAddOrder = async (e) => {

@@ -19,7 +19,7 @@ const token = localStorage.getItem('token');
       }
     };
     fetchUser();
-  }, [token]);
+  }, []);
 
   return { user, loading };
 };
