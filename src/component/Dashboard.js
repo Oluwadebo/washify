@@ -119,19 +119,19 @@ const Dashboard = () => {
     },
   ];
 
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center vh-100">
-        <div
-          className="spinner-border text-success"
-          role="status"
-          style={{ width: '4rem', height: '4rem' }}
-        >
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="d-flex justify-content-center align-items-center vh-100">
+  //       <div
+  //         className="spinner-border text-success"
+  //         role="status"
+  //         style={{ width: '4rem', height: '4rem' }}
+  //       >
+  //         <span className="visually-hidden">Loading...</span>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div>
@@ -158,23 +158,27 @@ const Dashboard = () => {
       </div>
 
       {/* ✅ Dashboard Cards */}
-      <div className="row mt-4 text-center">
-        {cards.map((card) => (
-          <div className="col-12 col-md-3 mb-3" key={card.title}>
-            <div
-              className="dashboard-card p-3 text-white rounded shadow-sm"
-              style={{
-                backgroundColor: card.bgColor,
-                minHeight: '140px',
-              }}
-            >
-              <h5>{card.title}</h5>
-              <p className="mb-1 small">{card.description}</p>
-              <h4>{card.value}</h4>
+      {loading ? (
+        <p className="mt-3">Loading orders...</p>
+      ) : (
+        <div className="row mt-4 text-center">
+          {cards.map((card) => (
+            <div className="col-12 col-md-3 mb-3" key={card.title}>
+              <div
+                className="dashboard-card p-3 text-white rounded shadow-sm"
+                style={{
+                  backgroundColor: card.bgColor,
+                  minHeight: '140px',
+                }}
+              >
+                <h5>{card.title}</h5>
+                <p className="mb-1 small">{card.description}</p>
+                <h4>{card.value}</h4>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

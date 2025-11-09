@@ -189,7 +189,7 @@ const token = localStorage.getItem('token');
       {/* 🔹 Orders Table */}
       <h5>Orders List</h5>
       {loading ? (
-        <p className='mt-3'>Loading orders, please wait...</p>
+        <p className='mt-3'>Loading orders...</p>
       ) : (
         <table className="table table-bordered table-striped table-hover shadow-sm text-center table-responsive">
           <thead>
