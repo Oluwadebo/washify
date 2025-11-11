@@ -11,7 +11,7 @@ const Expenses = ({ user }) => {
   const [customCategory, setCustomCategory] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadin, setLoadin] = useState(false);
-  const [loadi, setLoadi] = useState(false);
+  const [loadi, setLoadi] = useState(null);
 
   const token = localStorage.getItem('token');
 
@@ -79,7 +79,7 @@ const Expenses = ({ user }) => {
   };
 
   const deleteOrder = async (exp) => {
-    setLoadi(true);
+    setLoadi(exp._id);
     try {
       await axios.delete(`${API_URL}/${exp._id}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -89,7 +89,7 @@ const Expenses = ({ user }) => {
       console.error('Delete failed:', error);
       // setError(error.message);
     } finally {
-      setLoadi(false);
+      setLoadi(null);
     }
   };
 
@@ -204,15 +204,15 @@ const Expenses = ({ user }) => {
                     <button
                       className="btn btn-sm btn-danger"
                       onClick={() => deleteOrder(exp)}
-                      disabled={loadi}
+                      disabled={loadi === exp._id}
                     >
-                      {loadi ? (
+                      {loadi === exp._id ? (
                         <>
                           <div
                             className="spinner-border spinner-border-sm me-2"
                             role="status"
                           ></div>
-                          Adding in...
+                          Deleting...
                         </>
                       ) : (
                         <>

@@ -13,6 +13,7 @@ const Orders = ({ user }) => {
   const [editingOrder, setEditingOrder] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadin, setLoadin] = useState(false);
+  const [loadi, setLoadi] = useState(null);
   const [error, setError] = useState('');
   const token = localStorage.getItem('token');
 
@@ -104,6 +105,7 @@ const Orders = ({ user }) => {
 
   // 🔹 Delete order
   const deleteOrder = async (order) => {
+    setLoadi(order._id);
     try {
       await axios.delete(`${API_URL}/${order._id}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -112,6 +114,8 @@ const Orders = ({ user }) => {
     } catch (error) {
       console.error('Delete failed:', error);
       setError(error.message);
+    }finally {
+      setLoadi(null);
     }
   };
 
@@ -266,8 +270,21 @@ const Orders = ({ user }) => {
                     <button
                       className="btn btn-sm btn-danger"
                       onClick={() => deleteOrder(order)}
+                      disabled={loadi === order._id}
                     >
-                      <i className="bi bi-trash"></i> Delete
+                      {loadi === order._id ? (
+                        <>
+                          <div
+                            className="spinner-border spinner-border-sm me-2"
+                            role="status"
+                          ></div>
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <i className="bi bi-trash"></i> Delete
+                        </>
+                      )}
                     </button>
                   </td>
                 </tr>
