@@ -58,16 +58,23 @@ const Orders = ({ user }) => {
   }, []);
 
   useEffect(() => {
-    if (editingOrder && modalRef.current) {
-      setTimeout(() => {
-        modalRef.current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
+    if (editingOrder) {
+      // Ensure the modal exists in the DOM
+      const scrollToModal = () => {
+        if (modalRef.current) {
+          modalRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }
+      };
+
+      // Delay slightly to allow modal rendering
+      const timer = setTimeout(scrollToModal, 50);
+
+      return () => clearTimeout(timer);
     }
-  }, []);
+  }, [editingOrder]);
   // 🔹 Add new order
   const handleAddOrder = async (e) => {
     e.preventDefault();
@@ -314,6 +321,16 @@ const Orders = ({ user }) => {
       {editingOrder && (
         <div
           className="modal show fade d-block"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            overflowY: 'auto',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 1050,
+          }}
           tabIndex="-1"
           role="dialog"
           ref={modalRef}
