@@ -411,7 +411,7 @@ const Reports = () => {
     currentY += 4;
     autoTable(doc, {
       startY: currentY,
-      head: [['ID', 'Customer', 'Service', 'Price', 'Status', 'Date']],
+      head: [['Customer', 'Service', 'Price', 'Status', 'Date']],
       body: filteredOrders.length
         ? filteredOrders.map((o) => [
             o.customer,
@@ -432,7 +432,7 @@ const Reports = () => {
     currentY += 4;
     autoTable(doc, {
       startY: currentY,
-      head: [['ID', 'Category', 'Amount', 'Date']],
+      head: [[ 'Category', 'Amount', 'Date']],
       body: filteredExpenses.length
         ? filteredExpenses.map((e) => [
             e.category,
