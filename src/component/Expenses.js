@@ -206,7 +206,7 @@ const Expenses = ({ user }) => {
                       onClick={() => deleteOrder(exp)}
                       disabled={loadi}
                     >
-                      {loadin ? (
+                      {loadi ? (
                         <>
                           <div
                             className="spinner-border spinner-border-sm me-2"
