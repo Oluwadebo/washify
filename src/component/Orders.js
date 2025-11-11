@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import useDateFilter from './useDateFilter';
 import FilterControl from './FilterControl';
@@ -15,6 +15,7 @@ const Orders = ({ user }) => {
   const [loadin, setLoadin] = useState(false);
   const [loadi, setLoadi] = useState(null);
   const [error, setError] = useState('');
+  const modalRef = useRef(null);
   const token = localStorage.getItem('token');
 
   // 🔹 Date filter hook
@@ -56,6 +57,16 @@ const Orders = ({ user }) => {
     fetchOrders();
   }, []);
 
+  useEffect(() => {
+    if (editingOrder && modalRef.current) {
+      setTimeout(() => {
+        modalRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 100);
+    }
+  }, [editingOrder]);
   // 🔹 Add new order
   const handleAddOrder = async (e) => {
     e.preventDefault();
@@ -68,7 +79,6 @@ const Orders = ({ user }) => {
         paymentStatus,
         date: new Date().toISOString(),
       };
-      setLoading(true);
       const response = await axios.post(API_URL, newOrder, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -76,7 +86,6 @@ const Orders = ({ user }) => {
       setCustomer('');
       setPrice('');
       setPaymentStatus('Pending');
-      setLoading(false);
     } catch (error) {
       setError(error.message);
     } finally {
@@ -114,7 +123,7 @@ const Orders = ({ user }) => {
     } catch (error) {
       console.error('Delete failed:', error);
       setError(error.message);
-    }finally {
+    } finally {
       setLoadi(null);
     }
   };
@@ -196,7 +205,7 @@ const Orders = ({ user }) => {
             style={{ backgroundColor: '#2C3E50', color: '#ECF0F1' }}
             disabled={loadin}
           >
-          {loadin ? (
+            {loadin ? (
               <>
                 <div
                   className="spinner-border spinner-border-sm me-2"
@@ -302,7 +311,12 @@ const Orders = ({ user }) => {
 
       {/* 🔹 Edit Modal */}
       {editingOrder && (
-        <div className="modal show fade d-block" tabIndex="-1" role="dialog">
+        <div
+          className="modal show fade d-block"
+          tabIndex="-1"
+          role="dialog"
+          ref={modalRef}
+        >
           <div className="modal-dialog" role="document">
             <div className="modal-content shadow-lg">
               <div className="modal-header">
