@@ -64,9 +64,10 @@ const Orders = ({ user }) => {
           behavior: 'smooth',
           block: 'center',
         });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
     }
-  }, [editingOrder]);
+  }, []);
   // 🔹 Add new order
   const handleAddOrder = async (e) => {
     e.preventDefault();
@@ -378,7 +379,8 @@ const Orders = ({ user }) => {
                 </button>
                 <button
                   type="button"
-                  className="btn btn-success"
+                  className="btn"
+                  style={{ backgroundColor: '#2C3E50', color: '#ECF0F1' }}
                   onClick={handleSaveEdit}
                 >
                   Save Changes
