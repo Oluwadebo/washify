@@ -11,6 +11,7 @@ const Orders = ({ user }) => {
   const [price, setPrice] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('Pending');
   const [editingOrder, setEditingOrder] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadin, setLoadin] = useState(false);
   const [loadi, setLoadi] = useState(null);
@@ -58,23 +59,16 @@ const Orders = ({ user }) => {
   }, []);
 
   useEffect(() => {
-    if (editingOrder) {
-      // Ensure the modal exists in the DOM
-      const scrollToModal = () => {
-        if (modalRef.current) {
-          modalRef.current.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
-        }
-      };
-
-      // Delay slightly to allow modal rendering
-      const timer = setTimeout(scrollToModal, 50);
-
-      return () => clearTimeout(timer);
+    if (isModalOpen && modalRef.current) {
+      // Scroll to modal once when it opens
+      setTimeout(() => {
+        modalRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 50);
     }
-  }, [editingOrder]);
+  }, [isModalOpen]);
   // 🔹 Add new order
   const handleAddOrder = async (e) => {
     e.preventDefault();
@@ -101,6 +95,10 @@ const Orders = ({ user }) => {
     }
   };
 
+  const handleEditClick = (order) => {
+    setEditingOrder(order); // load order data
+    setIsModalOpen(true); // open modal and trigger scroll
+  };
   // 🔹 Save edited order
   const handleSaveEdit = async () => {
     try {
@@ -117,9 +115,14 @@ const Orders = ({ user }) => {
       setEditingOrder(null);
     } catch (error) {
       setError(error.message);
+    } finally {
+      setIsModalOpen(false);
+      setEditingOrder(null);
     }
   };
-
+  const handleCancelEdit = () => {
+    setIsModalOpen(false);
+  };
   // 🔹 Delete order
   const deleteOrder = async (order) => {
     setLoadi(order._id);
@@ -257,7 +260,7 @@ const Orders = ({ user }) => {
             {filteredOrders.length > 0 ? (
               filteredOrders.map((order) => (
                 <tr
-                  key={order.id}
+                  key={order._id}
                   style={{
                     backgroundColor:
                       order.paymentStatus === 'Paid' ? '#E8F8F5' : '#FEF9E7',
@@ -280,7 +283,7 @@ const Orders = ({ user }) => {
                   <td>
                     <button
                       className="btn btn-sm btn-info me-2"
-                      onClick={() => setEditingOrder(order)}
+                      onClick={() => handleEditClick(order)}
                     >
                       <i className="bi bi-pencil-square"></i> Edit
                     </button>
@@ -318,7 +321,7 @@ const Orders = ({ user }) => {
       )}
 
       {/* 🔹 Edit Modal */}
-      {editingOrder && (
+      {isModalOpen && editingOrder && (
         <div
           className="modal show fade d-block"
           style={{
@@ -328,7 +331,6 @@ const Orders = ({ user }) => {
             width: '100%',
             height: '100%',
             overflowY: 'auto',
-            backgroundColor: 'rgba(0,0,0,0.5)',
             zIndex: 1050,
           }}
           tabIndex="-1"
@@ -342,7 +344,7 @@ const Orders = ({ user }) => {
                 <button
                   type="button"
                   className="btn-close"
-                  onClick={() => setEditingOrder(null)}
+                  onClick={handleCancelEdit}
                 ></button>
               </div>
               <div className="modal-body">
@@ -390,7 +392,7 @@ const Orders = ({ user }) => {
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={() => setEditingOrder(null)}
+                  onClick={handleCancelEdit}
                 >
                   Cancel
                 </button>
