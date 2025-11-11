@@ -414,7 +414,6 @@ const Reports = () => {
       head: [['ID', 'Customer', 'Service', 'Price', 'Status', 'Date']],
       body: filteredOrders.length
         ? filteredOrders.map((o) => [
-            o.id,
             o.customer,
             o.service,
             formatCurrencyPDF(o.price),
@@ -436,7 +435,6 @@ const Reports = () => {
       head: [['ID', 'Category', 'Amount', 'Date']],
       body: filteredExpenses.length
         ? filteredExpenses.map((e) => [
-            e.id,
             e.category,
             formatCurrencyPDF(e.amount),
             new Date(e.date).toLocaleDateString(),
