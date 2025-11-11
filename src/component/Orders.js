@@ -12,8 +12,9 @@ const Orders = ({ user }) => {
   const [paymentStatus, setPaymentStatus] = useState('Pending');
   const [editingOrder, setEditingOrder] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadin, setLoadin] = useState(false);
   const [error, setError] = useState('');
-const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token');
 
   // 🔹 Date filter hook
   const {
@@ -37,51 +38,58 @@ const token = localStorage.getItem('token');
 
   // 🔹 Load orders from backend
 
- useEffect(() => {
-  const fetchOrders = async () => {
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(API_URL, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setOrders(response.data);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, []);
+
+  // 🔹 Add new order
+  const handleAddOrder = async (e) => {
+    e.preventDefault();
+    setLoadin(true);
     try {
+      const newOrder = {
+        customer,
+        service,
+        price: Number(price),
+        paymentStatus,
+        date: new Date().toISOString(),
+      };
       setLoading(true);
-      const response = await axios.get(API_URL, { headers: { Authorization: `Bearer ${token}` }});
-      setOrders(response.data);
+      const response = await axios.post(API_URL, newOrder, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setOrders([response.data, ...orders]);
+      setCustomer('');
+      setPrice('');
+      setPaymentStatus('Pending');
+      setLoading(false);
     } catch (error) {
       setError(error.message);
     } finally {
-      setLoading(false);
+      setLoadin(false);
     }
   };
-  fetchOrders();
-}, []);
-
-  // 🔹 Add new order
- const handleAddOrder = async (e) => {
-  e.preventDefault();
-  try {
-    const newOrder = {
-      customer,
-      service,
-      price: Number(price),
-      paymentStatus,
-      date: new Date().toISOString(),
-    };
-      setLoading(true);
-    const response = await axios.post(API_URL, newOrder, { headers: { Authorization: `Bearer ${token}` }});
-    setOrders([response.data, ...orders]);
-    setCustomer('');
-    setPrice('');
-    setPaymentStatus('Pending');
-      setLoading(false);
-
-  } catch (error) {
-    setError(error.message);
-  }
-};
 
   // 🔹 Save edited order
   const handleSaveEdit = async () => {
     try {
       const response = await axios.put(
         `${API_URL}/${editingOrder._id}`,
-        editingOrder,{ headers: { Authorization: `Bearer ${token}` } }
+        editingOrder,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setOrders(
         orders.map((order) =>
@@ -95,15 +103,17 @@ const token = localStorage.getItem('token');
   };
 
   // 🔹 Delete order
- const deleteOrder = async (order) => {
-  try {
-    await axios.delete(`${API_URL}/${order._id}`,{ headers: { Authorization: `Bearer ${token}` }});
-    setOrders(orders.filter((o) => o._id !== order._id));
-  } catch (error) {
-    console.error('Delete failed:', error);
-    setError(error.message);
-  }
-};
+  const deleteOrder = async (order) => {
+    try {
+      await axios.delete(`${API_URL}/${order._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setOrders(orders.filter((o) => o._id !== order._id));
+    } catch (error) {
+      console.error('Delete failed:', error);
+      setError(error.message);
+    }
+  };
 
   // 🔹 Filtered orders
   const filteredOrders = orders.filter((order) => filterByDate(order.date));
@@ -180,8 +190,19 @@ const token = localStorage.getItem('token');
             type="submit"
             className="btn w-100"
             style={{ backgroundColor: '#2C3E50', color: '#ECF0F1' }}
+            disabled={loadin}
           >
-            Add Order
+          {loadin ? (
+              <>
+                <div
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                ></div>
+                Adding in...
+              </>
+            ) : (
+              'Add Order'
+            )}
           </button>
         </div>
       </form>
@@ -189,7 +210,7 @@ const token = localStorage.getItem('token');
       {/* 🔹 Orders Table */}
       <h5>Orders List</h5>
       {loading ? (
-        <p className='mt-3'>Loading orders...</p>
+        <p className="mt-3">Loading orders...</p>
       ) : (
         <table className="table table-bordered table-striped table-hover shadow-sm text-center table-responsive">
           <thead>

@@ -9,7 +9,9 @@ const Expenses = ({ user }) => {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Rent');
   const [customCategory, setCustomCategory] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);  
+  const [loadin, setLoadin] = useState(false);
+  
   const token = localStorage.getItem('token');
 
   // Date filter hook
@@ -52,6 +54,7 @@ const Expenses = ({ user }) => {
   // Add new expense
   const handleAddExpense = async (e) => {
     e.preventDefault();
+    setLoadin(true);
     try {
       const newExpense = {
         amount: Number(amount),
@@ -69,6 +72,8 @@ const Expenses = ({ user }) => {
       setCustomCategory('');
     } catch (err) {
       console.error('Failed to add expense:', err);
+    }finally {
+      setLoadin(false);
     }
   };
 
@@ -150,8 +155,19 @@ const Expenses = ({ user }) => {
             type="submit"
             className="btn w-100"
             style={{ backgroundColor: '#2C3E50', color: '#ECF0F1' }}
+            disabled={loadin}
           >
-            Add
+          {loadin ? (
+              <>
+                <div
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                ></div>
+                Adding in...
+              </>
+            ) : (
+              'Add Expense'
+            )}
           </button>
         </div>
       </form>
