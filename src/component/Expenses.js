@@ -9,9 +9,10 @@ const Expenses = ({ user }) => {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Rent');
   const [customCategory, setCustomCategory] = useState('');
-  const [loading, setLoading] = useState(false);  
+  const [loading, setLoading] = useState(false);
   const [loadin, setLoadin] = useState(false);
-  
+  const [loadi, setLoadi] = useState(false);
+
   const token = localStorage.getItem('token');
 
   // Date filter hook
@@ -63,8 +64,8 @@ const Expenses = ({ user }) => {
       };
 
       const res = await axios.post(API_URL, newExpense, {
-          headers: { Authorization: `Bearer ${token}` },
-        }); // ✅ secure post
+        headers: { Authorization: `Bearer ${token}` },
+      }); // ✅ secure post
       setExpenses([res.data, ...expenses]);
 
       setAmount('');
@@ -72,12 +73,13 @@ const Expenses = ({ user }) => {
       setCustomCategory('');
     } catch (err) {
       console.error('Failed to add expense:', err);
-    }finally {
+    } finally {
       setLoadin(false);
     }
   };
 
   const deleteOrder = async (exp) => {
+    setLoadi(true);
     try {
       await axios.delete(`${API_URL}/${exp._id}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -86,6 +88,8 @@ const Expenses = ({ user }) => {
     } catch (error) {
       console.error('Delete failed:', error);
       // setError(error.message);
+    } finally {
+      setLoadi(false);
     }
   };
 
@@ -157,7 +161,7 @@ const Expenses = ({ user }) => {
             style={{ backgroundColor: '#2C3E50', color: '#ECF0F1' }}
             disabled={loadin}
           >
-          {loadin ? (
+            {loadin ? (
               <>
                 <div
                   className="spinner-border spinner-border-sm me-2"
@@ -196,12 +200,25 @@ const Expenses = ({ user }) => {
                 <tr key={exp._id}>
                   <td>{exp.category}</td>
                   <td>₦{exp.amount.toLocaleString()}</td>
-                   <td>
+                  <td>
                     <button
                       className="btn btn-sm btn-danger"
                       onClick={() => deleteOrder(exp)}
+                      disabled={loadi}
                     >
-                      <i className="bi bi-trash"></i> Delete
+                      {loadin ? (
+                        <>
+                          <div
+                            className="spinner-border spinner-border-sm me-2"
+                            role="status"
+                          ></div>
+                          Adding in...
+                        </>
+                      ) : (
+                        <>
+                          <i className="bi bi-trash"></i> Delete
+                        </>
+                      )}
                     </button>
                   </td>
                 </tr>
