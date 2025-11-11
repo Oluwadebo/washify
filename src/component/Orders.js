@@ -58,17 +58,17 @@ const Orders = ({ user }) => {
     fetchOrders();
   }, []);
 
-  useEffect(() => {
-    if (isModalOpen && modalRef.current) {
-      // Scroll to modal once when it opens
-      setTimeout(() => {
-        modalRef.current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
-      }, 50);
-    }
-  }, [isModalOpen]);
+ useEffect(() => {
+  if (isModalOpen) {
+    // small timeout to allow modal DOM to render
+    setTimeout(() => {
+      // Scroll the page to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Optional: focus the first input in modal
+      modalRef.current?.querySelector('input, select, textarea')?.focus();
+    }, 50);
+  }
+}, [isModalOpen]);
   // 🔹 Add new order
   const handleAddOrder = async (e) => {
     e.preventDefault();
