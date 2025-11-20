@@ -13,6 +13,7 @@ const Orders = ({ user }) => {
   const [editingOrder, setEditingOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingmodal, setLoadingmodal] = useState(false);
   const [loadin, setLoadin] = useState(false);
   const [loadi, setLoadi] = useState(null);
   const [error, setError] = useState('');
@@ -58,17 +59,17 @@ const Orders = ({ user }) => {
     fetchOrders();
   }, []);
 
- useEffect(() => {
-  if (isModalOpen) {
-    // small timeout to allow modal DOM to render
-    setTimeout(() => {
-      // Scroll the page to top
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      // Optional: focus the first input in modal
-      modalRef.current?.querySelector('input, select, textarea')?.focus();
-    }, 50);
-  }
-}, [isModalOpen]);
+  useEffect(() => {
+    if (isModalOpen) {
+      // small timeout to allow modal DOM to render
+      setTimeout(() => {
+        // Scroll the page to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Optional: focus the first input in modal
+        modalRef.current?.querySelector('input, select, textarea')?.focus();
+      }, 50);
+    }
+  }, [isModalOpen]);
   // 🔹 Add new order
   const handleAddOrder = async (e) => {
     e.preventDefault();
@@ -101,6 +102,7 @@ const Orders = ({ user }) => {
   };
   // 🔹 Save edited order
   const handleSaveEdit = async () => {
+    setLoadingmodal(true);
     try {
       const response = await axios.put(
         `${API_URL}/${editingOrder._id}`,
@@ -116,6 +118,7 @@ const Orders = ({ user }) => {
     } catch (error) {
       setError(error.message);
     } finally {
+      setLoadingmodal(false);
       setIsModalOpen(false);
       setEditingOrder(null);
     }
@@ -400,9 +403,20 @@ const Orders = ({ user }) => {
                   type="button"
                   className="btn"
                   style={{ backgroundColor: '#2C3E50', color: '#ECF0F1' }}
+                  disabled={loadingmodal}
                   onClick={handleSaveEdit}
                 >
-                  Save Changes
+                  {loadingmodal ? (
+                    <>
+                      <div
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                      ></div>
+                      Saving Changes...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </button>
               </div>
             </div>
