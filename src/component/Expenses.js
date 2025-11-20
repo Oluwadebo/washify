@@ -154,7 +154,7 @@ const Expenses = ({ user }) => {
           />
         </div>
 
-        <div className="col-md-2">
+        <div className="col-md-3">
           <button
             type="submit"
             className="btn w-100"
